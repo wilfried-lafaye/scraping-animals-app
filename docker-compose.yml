@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Database - MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: scraping_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: scraper
+      MONGO_INITDB_ROOT_PASSWORD: scraper_password
+      MONGO_INITDB_DATABASE: animals_db
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - scraping_network
+
+  # Scraper service (Scrapy)
+  scrapy:
+    build:
+      context: ./Scrapy
+      dockerfile: Dockerfile
+    container_name: scraping_scrapy
+    depends_on:
+      - mongodb
+      - elasticsearch
+    environment:
+      MONGO_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
+    volumes:
+      - ./Scrapy/crawler:/app/crawler
+      - ./Scrapy/data:/app/data
+    networks:
+      - scraping_network
+
+  # Web Application (Dash/FastAPI/Flask)
+  webapp:
+    build:
+      context: ./Webapp
+      dockerfile: Dockerfile
+    container_name: scraping_webapp
+    ports:
+      - "8050:8050"
+    depends_on:
+      - mongodb
+      - elasticsearch
+    environment:
+      MONGO_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
+    volumes:
+      - ./Webapp/app:/app
+    networks:
+      - scraping_network
+
+  # Search Engine
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: scraping_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - scraping_network
+
+  # Kibana for Elasticsearch visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: scraping_kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - scraping_network
+
+volumes:
+  mongodb_data:
+  elasticsearch_data:
+
+
+networks:
+  scraping_network:
+    driver: bridge
