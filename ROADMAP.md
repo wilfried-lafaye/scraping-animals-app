@@ -10,14 +10,14 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 | Step | Status | Description |
 |------|--------|-------------|
-| 1. Scraping | ✅ Done | Animal list + Details |
-| 1b. Scraper Unit Tests | 🚨 To Do | Validate JSON format before DB insertion |
-| **1c. CI Pipeline** | 🚨 Priority | GitHub Actions: flake8 + pytest on each push |
-| 2. Docker Compose | ✅ Done | Multi-service configuration |
+| 1. Scraping | ✅ Done | Animal list + Details (252 animaux) |
+| 1b. Scraper Unit Tests | ✅ Done | 9 tests implemented & passing |
+| 1c. CI Pipeline | ⚠️ Partial | File exists, not verified on GitHub |
+| 2. Docker Compose | ⚠️ Partial | Config done, **Dockerfiles empty** |
 | 3. MongoDB Storage | 🔲 To Do | Pipeline + Tests with real MongoDB instance |
-| 4. Web Application (TDD) | 🔲 To Do | Tests first → then implementation |
+| 4. Web Application (TDD) | 🔲 To Do | Tests skeleton, **app folder empty** |
 | 5. Elasticsearch | 🔲 To Do | Search engine (bonus) |
-| 6. Documentation | 🔲 To Do | Technical and functional README |
+| 6. Documentation | 🔲 To Do | README minimal (18 bytes) |
 
 ---
 
@@ -76,37 +76,43 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 ---
 
-### Step 2: Docker Compose ✅
+### Step 2: Docker Compose ⚠️ Partial
 
 - [x] Configure MongoDB
 - [x] Configure Elasticsearch + Kibana
 - [x] Configure network between services
-- [ ] Complete scraper Dockerfile
-- [ ] Complete webapp Dockerfile
+- [ ] **Complete scraper Dockerfile** *(currently empty)*
+- [ ] **Complete webapp Dockerfile** *(currently empty)*
 
 ---
 
-### Step 1b: Scraper Unit Tests 🚨
+### Step 1b: Scraper Unit Tests ✅ Done
 
 > [!IMPORTANT]
 > **Critical step**: Validate JSON format before any DB insertion.
 
-- [ ] Create `tests/test_spider.py`
-- [ ] Test `parse_animal_detail()` with mocked HTML responses
-- [ ] Verify exported data format (required fields present)
-- [ ] Validate JSON with schema (optional)
+- [x] Create `tests/test_spider.py`
+- [x] Test `parse_animal_detail()` with mocked HTML responses
+- [x] Verify exported data format (required fields present)
+- [x] Validate JSON with schema
+- [x] Test spider configuration (name, domains, settings)
+
+**Tests implemented (9 total)**:
+- `TestAnimalsSpider`: 4 tests (parse_animal_detail, required fields, limit)
+- `TestJsonValidation`: 2 tests (schema, null names)
+- `TestSpiderConfiguration`: 3 tests (name, domains, settings)
 
 ---
 
-### Step 1c: CI Pipeline 🚨
+### Step 1c: CI Pipeline ⚠️ Partial
 
 > [!IMPORTANT]
-> **Immediate priority**: GitHub Actions pipeline configured!
+> **Next step**: Verify pipeline runs correctly on GitHub!
 
 - [x] Create `.github/workflows/ci.yml`
 - [x] `lint` job: flake8 on each push
 - [x] `test` job: pytest with MongoDB Service Container
-- [ ] Verify pipeline on GitHub
+- [ ] **Verify pipeline on GitHub** *(not yet tested)*
 
 **Dev/Prod Parity**: Uses a real MongoDB instance (not mongomock) via Docker Service Container in CI.
 
@@ -134,13 +140,13 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 > **TDD Approach**: Write tests BEFORE code.
 
 **Step 1 - Tests First**:
-- [ ] Create `tests/test_webapp.py`
-- [ ] Define tests for `/animals` route (paginated list)
-- [ ] Define tests for `/animals/<id>` route (detail page)
-- [ ] Define tests for statistics (counts, charts)
+- [x] Create `tests/test_webapp.py` *(file exists)*
+- [/] Define tests for `/animals` route *(skeleton, TODO in code)*
+- [/] Define tests for `/animals/<id>` route *(skeleton, TODO in code)*
+- [/] Define tests for statistics *(skeleton, TODO in code)*
 
 **Step 2 - Implementation**:
-- [ ] Create Dash application (make tests pass)
+- [ ] Create Dash application *(app folder currently empty)*
 - [ ] Home page with statistics
 - [ ] Animal list with pagination
 - [ ] Detailed animal page
