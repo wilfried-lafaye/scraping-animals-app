@@ -5,10 +5,10 @@ from urllib.parse import urljoin
 class AnimalsSpider(scrapy.Spider):
     name = "animals"
     allowed_domains = ["a-z-animals.com"]
-    
+
     # Configuration: number of animals to scrape per letter
     ANIMALS_PER_LETTER = 10
-    
+
     custom_settings = {
         'ROBOTSTXT_OBEY': False,
         'DOWNLOAD_DELAY': 0.5,  # Reduced from 2s
@@ -40,7 +40,7 @@ class AnimalsSpider(scrapy.Spider):
         for link in letter_links:
             full_url = urljoin(response.url, link)
             yield scrapy.Request(
-                full_url, 
+                full_url,
                 callback=self.parse_letter_page,
                 meta={"impersonate": "chrome120"}
             )
@@ -57,7 +57,7 @@ class AnimalsSpider(scrapy.Spider):
             # Limit to ANIMALS_PER_LETTER per letter page
             if count >= self.ANIMALS_PER_LETTER:
                 break
-                
+
             name = a_link.xpath('text()').get()
             url = a_link.xpath('@href').get()
 
@@ -66,7 +66,7 @@ class AnimalsSpider(scrapy.Spider):
                 skip_names = ['Amphibians', 'Birds', 'Fish', 'Mammals', 'Reptiles', 'All Animals']
                 if name.strip() in skip_names:
                     continue
-                    
+
                 count += 1
                 # Follow the URL to get detailed info
                 yield scrapy.Request(
@@ -85,45 +85,43 @@ class AnimalsSpider(scrapy.Spider):
         """Parse individual animal page and extract detailed information."""
         animal_name = response.meta.get('animal_name')
         source_page = response.meta.get('source_page')
-        
+
         # Extract scientific name (usually in subtitle or specific element)
         scientific_name = response.xpath(
             '//p[contains(@class, "scientific-name")]/text() | '
             '//span[contains(@class, "scientific")]/text() | '
             '//em/text()'
         ).get()
-        
+
         # Extract description (first paragraph in main content)
         description = response.xpath(
             '//div[@itemprop="description"]//p[1]/text() | '
             '//article//p[1]/text()'
         ).get()
-        
+
         # Extract key facts from the facts box
         key_facts = response.xpath(
             '//div[contains(@class, "animal-facts")]//li/text() | '
             '//ul[contains(@class, "facts")]//li/text()'
         ).getall()
-        
+
         # Extract conservation status
         conservation_status = response.xpath(
             '//*[contains(text(), "Conservation Status")]/following-sibling::*[1]/text() | '
             '//a[contains(@href, "conservation")]/text()'
         ).get()
-        
 
-        
         # Extract habitat
         habitat = response.xpath(
             '//*[contains(text(), "Habitat")]/following-sibling::*[1]/text()'
         ).get()
-        
+
         # Extract diet
         diet = response.xpath(
             '//*[contains(text(), "Diet")]/following-sibling::*[1]/text() | '
             '//a[contains(@href, "/diet/")]/text()'
         ).get()
-        
+
         yield {
             'animal_name': animal_name,
             'scientific_name': scientific_name.strip() if scientific_name else None,
@@ -136,5 +134,5 @@ class AnimalsSpider(scrapy.Spider):
             'url': response.url,
             'source_page': source_page
         }
-        
+
         self.logger.info(f"Scraped details for: {animal_name}")
