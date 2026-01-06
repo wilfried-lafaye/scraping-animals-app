@@ -9,16 +9,22 @@ class AnimalsSpider(scrapy.Spider):
     # Configuration: number of animals to scrape per letter
     ANIMALS_PER_LETTER = 10
 
+    # Spider-specific settings + JSON export
     custom_settings = {
-        'ROBOTSTXT_OBEY': False,
-        'DOWNLOAD_DELAY': 0.5,  # Reduced from 2s
-        'CONCURRENT_REQUESTS': 1,
-        # Enable scrapy-impersonate handler
+        # Enable scrapy-impersonate to bypass 403
         'DOWNLOAD_HANDLERS': {
             "http": "scrapy_impersonate.ImpersonateDownloadHandler",
             "https": "scrapy_impersonate.ImpersonateDownloadHandler",
         },
         'TWISTED_REACTOR': "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
+        # JSON export
+        'FEEDS': {
+            'data/animals.json': {
+                'format': 'json',
+                'encoding': 'utf-8',
+                'overwrite': True,
+            },
+        },
     }
 
     def start_requests(self):
@@ -86,51 +92,50 @@ class AnimalsSpider(scrapy.Spider):
         animal_name = response.meta.get('animal_name')
         source_page = response.meta.get('source_page')
 
-        # Extract scientific name (usually in subtitle or specific element)
-        scientific_name = response.xpath(
-            '//p[contains(@class, "scientific-name")]/text() | '
-            '//span[contains(@class, "scientific")]/text() | '
-            '//em/text()'
-        ).get()
+        # Extract Scientific Classification (taxonomy)
+        classification = {}
+        classification_dl = response.xpath('//dl[contains(@class, "animal-facts")]')
+        if classification_dl:
+            dt_elements = classification_dl.xpath('.//dt')
+            dd_elements = classification_dl.xpath('.//dd')
+            for dt, dd in zip(dt_elements, dd_elements):
+                label = dt.xpath('string(.)').get()
+                value = dd.xpath('string(.)').get()
+                if label and value:
+                    label = label.strip().rstrip(':')
+                    value = value.strip()
+                    classification[label] = value
 
-        # Extract description (first paragraph in main content)
-        description = response.xpath(
-            '//div[@itemprop="description"]//p[1]/text() | '
-            '//article//p[1]/text()'
-        ).get()
+        # Extract Animal Facts (Main Prey, Habitat, Predators, Diet, etc.)
+        facts = {}
+        facts_dl = response.xpath('//dl[@class="row" and contains(@title, "Facts")]')
+        if facts_dl:
+            dt_elements = facts_dl.xpath('.//dt')
+            dd_elements = facts_dl.xpath('.//dd')
+            for dt, dd in zip(dt_elements, dd_elements):
+                label = dt.xpath('string(.)').get()
+                value = dd.xpath('string(.)').get()
+                if label and value:
+                    label = label.strip().rstrip(':')
+                    value = value.strip()
+                    if label and value:
+                        facts[label] = value
 
-        # Extract key facts from the facts box
-        key_facts = response.xpath(
-            '//div[contains(@class, "animal-facts")]//li/text() | '
-            '//ul[contains(@class, "facts")]//li/text()'
+        # Extract Locations (continents/regions where the animal is found)
+        locations = response.xpath(
+            '//a[contains(@href, "/animals/location/")]/text()'
         ).getall()
-
-        # Extract conservation status
-        conservation_status = response.xpath(
-            '//*[contains(text(), "Conservation Status")]/following-sibling::*[1]/text() | '
-            '//a[contains(@href, "conservation")]/text()'
-        ).get()
-
-        # Extract habitat
-        habitat = response.xpath(
-            '//*[contains(text(), "Habitat")]/following-sibling::*[1]/text()'
-        ).get()
-
-        # Extract diet
-        diet = response.xpath(
-            '//*[contains(text(), "Diet")]/following-sibling::*[1]/text() | '
-            '//a[contains(@href, "/diet/")]/text()'
-        ).get()
+        excluded = ['By Location', 'Location', 'By']
+        locations = [
+            loc.strip() for loc in locations
+            if loc.strip() and loc.strip() not in excluded
+        ]
 
         yield {
             'animal_name': animal_name,
-            'scientific_name': scientific_name.strip() if scientific_name else None,
-            'description': description.strip() if description else None,
-            'key_facts': [f.strip() for f in key_facts if f.strip()] if key_facts else [],
-            'conservation_status': conservation_status.strip() if conservation_status else None,
-            'habitat': habitat.strip() if habitat else None,
-            'diet': diet.strip() if diet else None,
-
+            'classification': classification if classification else None,
+            'facts': facts if facts else None,
+            'locations': locations if locations else [],
             'url': response.url,
             'source_page': source_page
         }

@@ -16,11 +16,5 @@ DEFAULT_REQUEST_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 }
 
-# Output
-FEEDS = {
-    'data/animals_scrapy.json': {
-        'format': 'json',
-        'encoding': 'utf8',
-        'indent': 4,
-    },
-}
+# Output is now configured in the spider's custom_settings
+

@@ -12,9 +12,9 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 |------|--------|-------------|
 | 1. Scraping | ✅ Done | Animal list + Details (252 animaux) |
 | 1b. Scraper Unit Tests | ✅ Done | 9 tests implemented & passing |
-| 1c. CI Pipeline | ⚠️ Partial | File exists, not verified on GitHub |
-| 2. Docker Compose | ⚠️ Partial | Config done, **Dockerfiles empty** |
-| 3. MongoDB Storage | 🔲 To Do | Pipeline + Tests with real MongoDB instance |
+| 1c. CI Pipeline | ✅ Done | lint + test passing on GitHub |
+| 2. Docker Compose | ✅ Done | Dockerfiles complete |
+| 3. MongoDB Storage | ✅ Done | 252 animals in MongoDB |
 | 4. Web Application (TDD) | 🔲 To Do | Tests skeleton, **app folder empty** |
 | 5. Elasticsearch | 🔲 To Do | Search engine (bonus) |
 | 6. Documentation | 🔲 To Do | README minimal (18 bytes) |
@@ -76,13 +76,13 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 ---
 
-### Step 2: Docker Compose ⚠️ Partial
+### Step 2: Docker Compose ✅ Done
 
 - [x] Configure MongoDB
 - [x] Configure Elasticsearch + Kibana
 - [x] Configure network between services
-- [ ] **Complete scraper Dockerfile** *(currently empty)*
-- [ ] **Complete webapp Dockerfile** *(currently empty)*
+- [x] Complete scraper Dockerfile
+- [x] Complete webapp Dockerfile
 
 ---
 
@@ -104,31 +104,31 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 ---
 
-### Step 1c: CI Pipeline ⚠️ Partial
+### Step 1c: CI Pipeline ✅ Done
 
-> [!IMPORTANT]
-> **Next step**: Verify pipeline runs correctly on GitHub!
+> [!NOTE]
+> **Pipeline verified and passing on GitHub Actions!**
 
 - [x] Create `.github/workflows/ci.yml`
 - [x] `lint` job: flake8 on each push
 - [x] `test` job: pytest with MongoDB Service Container
-- [ ] **Verify pipeline on GitHub** *(not yet tested)*
+- [x] Verify pipeline on GitHub ✅
 
 **Dev/Prod Parity**: Uses a real MongoDB instance (not mongomock) via Docker Service Container in CI.
 
 ---
 
-### Step 3: MongoDB Storage 🔲
+### Step 3: MongoDB Storage ✅ Done
 
-- [ ] Add `pymongo` to dependencies
-- [ ] Create Scrapy Item Pipeline for MongoDB
-- [ ] Test data insertion
-- [ ] Verify data in MongoDB
+- [x] Add `pymongo` to dependencies
+- [x] Create Scrapy Item Pipeline for MongoDB (`pipelines.py`)
+- [x] Test data insertion
+- [x] Verify data in MongoDB (252 animals inserted)
 
 **Integration Tests (real MongoDB instance)**:
-- [ ] Test Spider → MongoDB pipeline with Docker Service Container
-- [ ] Verify connection and insertion
-- [ ] Ensure Dev/Prod parity
+- [x] Test Spider → MongoDB pipeline with Docker Service Container
+- [x] Verify connection and insertion
+- [x] Ensure Dev/Prod parity
 
 ---
 
