@@ -16,6 +16,8 @@ class AnimalsSpider(scrapy.Spider):
             "http": "scrapy_impersonate.ImpersonateDownloadHandler",
             "https": "scrapy_impersonate.ImpersonateDownloadHandler",
         },
+        # Respectful crawling at spider level
+        'DOWNLOAD_DELAY': 0.5,
         'TWISTED_REACTOR': "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         # JSON export
         'FEEDS': {
@@ -106,6 +108,25 @@ class AnimalsSpider(scrapy.Spider):
                     value = value.strip()
                     classification[label] = value
 
+        # Extract fields expected by unit tests / JSON schema
+        scientific_name = response.xpath('//em/text()').get()
+
+        # Description
+        description_parts = response.xpath('//div[@itemprop="description"]//text()').getall()
+        description = " ".join([p.strip() for p in description_parts if p.strip()]) if description_parts else None
+
+        # Key facts (list items)
+        key_facts = response.xpath('//div[contains(@class, "animal-facts")]//li/text()').getall()
+
+        # Conservation status, habitat, diet — look for labelled spans
+        def extract_label_value(label):
+            val = response.xpath(f'//span[normalize-space(text())="{label}"]/following-sibling::span[1]/text()').get()
+            return val.strip() if val else None
+
+        conservation_status = extract_label_value('Conservation Status')
+        habitat = extract_label_value('Habitat')
+        diet = extract_label_value('Diet')
+
         # Extract Animal Facts (Main Prey, Habitat, Predators, Diet, etc.)
         facts = {}
         facts_dl = response.xpath('//dl[@class="row" and contains(@title, "Facts")]')
@@ -133,6 +154,12 @@ class AnimalsSpider(scrapy.Spider):
 
         yield {
             'animal_name': animal_name,
+            'scientific_name': scientific_name,
+            'description': description,
+            'key_facts': key_facts if key_facts else None,
+            'conservation_status': conservation_status,
+            'habitat': habitat,
+            'diet': diet,
             'classification': classification if classification else None,
             'facts': facts if facts else None,
             'locations': locations if locations else [],
