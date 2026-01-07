@@ -31,11 +31,15 @@ def main():
         cs.pop('DOWNLOAD_HANDLERS', None)
         AnimalsSpider.custom_settings = cs
 
-    # Ensure MongoDB pipeline is active for direct insertion when running locally
-    settings['ITEM_PIPELINES'] = settings.get('ITEM_PIPELINES', {})
-    settings['ITEM_PIPELINES'].update({
-        'crawler.pipelines.MongoDBPipeline': 300,
-    })
+    # Optionally skip MongoDB pipeline when environment variable SKIP_MONGO is set
+    if os.environ.get('SKIP_MONGO'):
+        settings['ITEM_PIPELINES'] = {}
+    else:
+        # Ensure MongoDB pipeline is active for direct insertion when running locally
+        settings['ITEM_PIPELINES'] = settings.get('ITEM_PIPELINES', {})
+        settings['ITEM_PIPELINES'].update({
+            'crawler.pipelines.MongoDBPipeline': 300,
+        })
 
     process = CrawlerProcess(settings)
     process.crawl(AnimalsSpider)
