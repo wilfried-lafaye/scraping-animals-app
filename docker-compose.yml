@@ -33,21 +33,21 @@ services:
     networks:
       - scraping_network
 
-  # Web Application (Dash/FastAPI/Flask)
+  # Web Application (Streamlit)
   webapp:
     build:
       context: ./Webapp
       dockerfile: Dockerfile
     container_name: scraping_webapp
     ports:
-      - "8050:8050"
+      - "8501:8501"
     depends_on:
       - mongodb
       - elasticsearch
     environment:
-      MONGO_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
+      MONGODB_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
     volumes:
-      - ./Webapp/app:/app
+      - ./Webapp:/app
     networks:
       - scraping_network
 

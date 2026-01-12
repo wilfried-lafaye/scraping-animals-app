@@ -1,5 +1,6 @@
 import scrapy
 from urllib.parse import urljoin
+import os
 
 
 class AnimalsSpider(scrapy.Spider):
@@ -19,9 +20,9 @@ class AnimalsSpider(scrapy.Spider):
         # Respectful crawling at spider level
         'DOWNLOAD_DELAY': 0.5,
         'TWISTED_REACTOR': "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
-        # JSON export
+        # JSON export avec chemin absolu
         'FEEDS': {
-            'data/animals.json': {
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'animals.json'): {
                 'format': 'json',
                 'encoding': 'utf-8',
                 'overwrite': True,
@@ -94,6 +95,15 @@ class AnimalsSpider(scrapy.Spider):
         animal_name = response.meta.get('animal_name')
         source_page = response.meta.get('source_page')
 
+        # Extract image URL
+        image_url = response.xpath('//img[contains(@class, "animal-image") or contains(@class, "main-image")]/@src').get()
+        if not image_url:
+            image_url = response.xpath('//img[@alt="' + animal_name + '"]/@src').get()
+        if not image_url:
+            image_url = response.xpath('//div[contains(@class, "animal-header")]//img/@src').get()
+        if image_url:
+            image_url = urljoin(response.url, image_url)
+
         # Extract Scientific Classification (taxonomy)
         classification = {}
         classification_dl = response.xpath('//dl[contains(@class, "animal-facts")]')
@@ -160,6 +170,7 @@ class AnimalsSpider(scrapy.Spider):
             'conservation_status': conservation_status,
             'habitat': habitat,
             'diet': diet,
+            'image_url': image_url,
             'classification': classification if classification else None,
             'facts': facts if facts else None,
             'locations': locations if locations else [],

@@ -7,10 +7,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app/ ./
+COPY . .
 
-# Expose port for Dash
-EXPOSE 8050
+# Expose port for Streamlit
+EXPOSE 8501
 
-# Run the Dash application with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8050", "app:server"]
+# Run the Streamlit application
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
