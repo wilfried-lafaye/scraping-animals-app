@@ -1,5 +1,6 @@
 # Data files
-Scrapy/data/
+scrapy/data/*
+!scrapy/data/animals.json
 
 # Python
 __pycache__/
