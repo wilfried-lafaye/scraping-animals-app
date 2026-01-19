@@ -1,10 +1,11 @@
 """Application Streamlit pour afficher les animaux - Améliorée"""
-from utils import extract_diet_category, extract_habitat_category, extract_countries
+from utils import extract_diet_category, extract_habitat_category, extract_countries, extract_countries_from_text
 from streamlit_folium import st_folium
 import folium
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
+import plotly.express as px
 from config import MONGODB_URI, DATABASE_NAME, COLLECTION_NAME
 
 # Configuration de la page
@@ -97,16 +98,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown("# WildData Encyclopedia")
-st.markdown("Global biodiversity data explorer.")
+st.markdown("# 🐾 World Animals")
+st.markdown("Explore global biodiversity and discover the animals of our planet.")
 
 
 # Connexion MongoDB
 
 @st.cache_resource
 def get_database():
-    client = MongoClient(MONGODB_URI)
-    return client[DATABASE_NAME]
+    import time
+    for attempt in range(5):
+        try:
+            client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=3000)
+            client.admin.command("ping")
+            return client[DATABASE_NAME]
+        except Exception:
+            if attempt == 4:
+                raise
+            time.sleep(1.5)
 
 
 try:
@@ -117,36 +126,71 @@ try:
     # DATA LOADING & PROCESSING
     # ---------------------------------------------------------
     # Load data from MongoDB (Cached)
-    @st.cache_data(ttl=600)
+    @st.cache_data(ttl=30)
     def load_data():
         data = list(collection.find({}, {"_id": 0}))
 
         # Flatten data for DataFrame
         processed_data = []
         for item in data:
+            # Clean conservation status - take only the first one if multiple, remove invalid ones
+            raw_status = item.get('conservation_status') or 'Unknown'
+            valid_statuses = [
+                'Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered',
+                'Critically Endangered', 'Extinct in the Wild', 'Extinct',
+                'Data Deficient', 'Not Evaluated', 'Not Listed'
+            ]
+            # Check if status contains comma (multiple statuses)
+            if ',' in str(raw_status):
+                # Take the first valid status
+                parts = [p.strip() for p in str(raw_status).split(',')]
+                clean_status = 'Unknown'
+                for part in parts:
+                    if part in valid_statuses:
+                        clean_status = part
+                        break
+            elif raw_status in valid_statuses:
+                clean_status = raw_status
+            else:
+                clean_status = 'Unknown'
+            
             # Extract key fields directy from flat structure
             row = {
                 'animal_name': item.get('animal_name', 'Unknown'),
                 'scientific_name': item.get('scientific_name') or 'N/A',
-                'conservation_status': item.get('conservation_status') or 'Unknown',
+                'conservation_status': clean_status,
                 'diet': item.get('diet') or 'Unknown',
                 'habitat': item.get('habitat') or 'Unknown',
                 'description': item.get('description') or 'No description available.',
                 'key_facts': item.get('key_facts', []),
                 'locations': item.get('locations', []),  # Handle missing locations
                 'image_url': item.get('image_url'),
-                'source_url': item.get('url')
+                'source_url': item.get('url'),
+                'facts': item.get('facts', {})  # Add facts dict for extraction
             }
 
             # Extraction logic
-            row['Diet Category'] = extract_diet_category(row['diet'])
-            row['Habitat Category'] = extract_habitat_category(row['habitat'])
+            # Use facts['Diet'] if available, fallback to diet field
+            diet_text = row.get('diet')
+            if isinstance(row.get('facts'), dict) and 'Diet' in row['facts']:
+                diet_text = row['facts']['Diet']
+            row['Diet Category'] = extract_diet_category(diet_text)
+            
+            # Priority order for habitat: facts['Habitat'] > habitat field > locations
+            habitat_text = None
+            if isinstance(row.get('facts'), dict) and 'Habitat' in row['facts']:
+                habitat_text = row['facts']['Habitat']
+            elif row.get('habitat'):
+                habitat_text = row.get('habitat')
+            elif isinstance(row.get('locations'), list) and len(row['locations']) > 0:
+                # Join locations to create habitat text
+                habitat_text = ', '.join(row['locations'])
+            row['Habitat Category'] = extract_habitat_category(habitat_text)
             
             # Country extraction: Try locations first, then fallback to habitat text
             countries = extract_countries(row['locations'])
             if not countries and row['habitat'] != 'Unknown':
-                 from utils import extract_countries_from_text
-                 countries = extract_countries_from_text(row['habitat'])
+                countries = extract_countries_from_text(row['habitat'])
             
             row['Countries'] = countries
 
@@ -164,18 +208,33 @@ try:
     search_col1, search_col2 = st.columns([1, 2])
     with search_col2:
         search_query = st.text_input(
-            "Unknown",
+            "Search",
             placeholder="Search animal (e.g. Panthera, Eagle)...",
             label_visibility="collapsed")
 
+    # Sidebar filters
+    with st.sidebar:
+        st.header("Filters")
+        diet_choices = sorted([c for c in df_animals["Diet Category"].dropna().unique() if c])
+        habitat_choices = sorted([c for c in df_animals["Habitat Category"].dropna().unique() if c])
+
+        selected_diets = st.multiselect("Diet", options=diet_choices, default=diet_choices)
+        selected_habitats = st.multiselect("Habitat", options=habitat_choices, default=habitat_choices)
+
     # ---------------------------------------------------------
-    # FILTERING LOGIC (SEARCH ONLY)
+    # FILTERING LOGIC (SEARCH + FILTERS)
     # ---------------------------------------------------------
     filtered_df = df_animals.copy()
 
     if search_query:
         filtered_df = filtered_df[filtered_df['animal_name'].str.contains(
             search_query, case=False, na=False)]
+    # Apply sidebar filters
+    if len(filtered_df):
+        if selected_diets:
+            filtered_df = filtered_df[filtered_df["Diet Category"].isin(selected_diets)]
+        if selected_habitats:
+            filtered_df = filtered_df[filtered_df["Habitat Category"].isin(selected_habitats)]
 
     animals_count = len(filtered_df)
 
@@ -212,16 +271,39 @@ try:
 
         st.markdown("### Animal List")
 
+        # Pagination controls
+        if 'page' not in st.session_state:
+            st.session_state.page = 1
+        items_per_page = st.selectbox("Items per page", [10, 20, 50], index=1)
+        total_pages = max(1, (len(filtered_df) + items_per_page - 1) // items_per_page)
+        if st.session_state.page > total_pages:
+            st.session_state.page = total_pages
+
+        prev_col, page_col, next_col = st.columns([1, 2, 1])
+        with prev_col:
+            if st.button("← Prev", disabled=st.session_state.page <= 1):
+                st.session_state.page -= 1
+                st.rerun()
+        with page_col:
+            st.markdown(f"Page {st.session_state.page} / {total_pages}")
+        with next_col:
+            if st.button("Next →", disabled=st.session_state.page >= total_pages):
+                st.session_state.page += 1
+                st.rerun()
+
         # Select columns to display
-        df_display = filtered_df.sort_values('animal_name')
+        df_sorted = filtered_df.sort_values('animal_name')
+        start_idx = (st.session_state.page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+        df_display = df_sorted.iloc[start_idx:end_idx]
 
         # Grid Layout for Animal Names (Buttons)
         cols = st.columns(5)
-        for index, row in df_display.iterrows():
+        for idx, (index, row) in enumerate(df_display.iterrows()):
             # Use modulo to cycle through columns
-            col = cols[index % 5]
+            col = cols[idx % 5]
             with col:
-                if st.button(row['animal_name'], key=f"btn_{row['animal_name']}", use_container_width=True):
+                if st.button(row['animal_name'], key=f"btn_{index}_{idx}", use_container_width=True):
                     show_detail(row['animal_name'])
                     st.rerun()
 
@@ -257,6 +339,17 @@ try:
             choropleth.add_to(m)
 
         st_folium(m, width=1200, height=500, use_container_width=True)
+
+        st.divider()
+
+        # Charts section
+        st.markdown("### Insights")
+        if not filtered_df.empty:
+            diet_counts = filtered_df["Diet Category"].value_counts().reset_index()
+            diet_counts.columns = ["Diet", "Count"]
+            fig1 = px.bar(diet_counts, x="Diet", y="Count", title="Diet Distribution", text="Count")
+            fig1.update_traces(textposition='outside')
+            st.plotly_chart(fig1, use_container_width=True)
 
     # ---------------------------------------------------------
     # VIEW: DETAIL
@@ -308,13 +401,20 @@ try:
             </div>
             """, unsafe_allow_html=True)
 
-            st.markdown("### Description")
-            st.write(animal.get('description', 'No description available.'))
-
-            st.divider()
+            # Only show description if it exists
+            if animal.get('description'):
+                st.markdown("### Description")
+                st.write(animal.get('description'))
+                st.divider()
 
             st.markdown("### Habitat")
-            st.write(animal.get('habitat', 'No details available.'))
+            # Try to get habitat from facts first, then fallback to habitat field
+            habitat_info = 'Unknown'
+            if isinstance(animal.get('facts'), dict) and animal['facts'].get('Habitat'):
+                habitat_info = animal['facts']['Habitat']
+            elif animal.get('habitat'):
+                habitat_info = animal['habitat']
+            st.write(habitat_info)
 
             st.divider()
 
@@ -330,8 +430,16 @@ try:
 
             with c2:
                 st.markdown("### More Info")
+                if animal.get('image_url'):
+                    try:
+                        st.image(animal.get('image_url'), use_container_width=True)
+                    except Exception:
+                        pass
                 if animal.get('source_url'):
-                    st.link_button("View Source", animal.get('source_url'))
+                    if hasattr(st, "link_button"):
+                        st.link_button("View Source", animal.get('source_url'))
+                    else:
+                        st.markdown(f"[View Source]({animal.get('source_url')})")
 
 
         else:

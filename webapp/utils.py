@@ -42,14 +42,19 @@ def extract_habitat_category(text):
     text_lower = text.lower()
 
     categories = {
-        'Ocean/Marine': ['ocean', 'sea', 'marine', 'coral', 'reef', 'pacific', 'atlantic'],
-        'Forest/Jungle': ['forest', 'jungle', 'woodland', 'rainforest', 'canopy', 'amazon'],
-        'Desert': ['desert', 'arid', 'sand', 'dune', 'sahara'],
-        'Savanna/Grassland': ['savanna', 'grassland', 'plain', 'prairie', 'meadow'],
-        'Wetlands/Swamp': ['wetland', 'swamp', 'marsh', 'bog', 'mangrove', 'river', 'lake'],
-        'Mountain': ['mountain', 'alpine', 'himalaya', 'rocky'],
+        'Marine/Coastal': [
+            'ocean', 'sea', 'marine', 'coral', 'reef', 'coast', 'coastal', 'shore', 'beach', 'island', 'gulf', 'bay',
+        ],
+        'Freshwater': [
+            'river', 'lake', 'pond', 'stream', 'creek', 'freshwater', 'lagoon', 'delta', 'canal', 'estuary',
+        ],
+        'Forest/Jungle': ['forest', 'jungle', 'woodland', 'rainforest', 'canopy', 'amazon', 'taiga'],
+        'Desert/Arid': ['desert', 'arid', 'sand', 'dune', 'sahara', 'semi-arid'],
+        'Savanna/Grassland': ['savanna', 'grassland', 'plain', 'prairie', 'meadow', 'steppe'],
+        'Wetlands/Swamp': ['wetland', 'swamp', 'marsh', 'bog', 'mangrove'],
+        'Mountain/Highland': ['mountain', 'alpine', 'himalaya', 'rocky', 'plateau', 'highland'],
         'Polar/Tundra': ['polar', 'arctic', 'antarctic', 'tundra', 'ice', 'snow'],
-        'Urban/Domestic': ['urban', 'city', 'farm', 'house', 'pet']
+        'Urban/Domestic': ['urban', 'city', 'town', 'village', 'farm', 'ranch', 'domestic', 'pet', 'zoo']
     }
 
     for category, keywords in categories.items():

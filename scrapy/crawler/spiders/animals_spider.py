@@ -28,6 +28,8 @@ class AnimalsSpider(scrapy.Spider):
                 'overwrite': True,
             },
         },
+        # Allow resuming long crawls (persist scheduler state)
+        'JOBDIR': 'jobstate/animals'
     }
 
     def start_requests(self):
@@ -93,6 +95,31 @@ class AnimalsSpider(scrapy.Spider):
         letter = response.url.split('start-with-')[-1].replace('/', '').upper()
         self.logger.info(f"✅ LETTER COMPLETED: Finished queuing animals for letter '{letter}'")
 
+        # Try to follow pagination for this letter page (if any)
+        next_selectors = [
+            '//a[@rel="next"]/@href',
+            '//link[@rel="next"]/@href',
+            '//a[contains(@class, "next")]/@href',
+            '//ul[contains(@class, "pagination")]//a[@rel="next" or contains(@class, "next") or contains(translate(normalize-space(.), "NEXT", "next"), "next")]/@href',
+            # Generic fallback for common query params
+            '//a[contains(@href, "?page=") or contains(@href, "?pg=") or contains(@href, "/page/")]/@href'
+        ]
+
+        next_urls = set()
+        for xp in next_selectors:
+            for href in response.xpath(xp).getall():
+                if href:
+                    next_urls.add(urljoin(response.url, href))
+
+        for next_url in next_urls:
+            # Rely on Scrapy dupefilter to avoid loops
+            self.logger.info(f"Following pagination: {next_url}")
+            yield scrapy.Request(
+                next_url,
+                callback=self.parse_letter_page,
+                meta={"impersonate": "chrome120"}
+            )
+
     def parse_animal_detail(self, response):
         """Parse individual animal page and extract detailed information."""
         animal_name = response.meta.get('animal_name')
@@ -124,19 +151,51 @@ class AnimalsSpider(scrapy.Spider):
         # Extract fields expected by unit tests / JSON schema
         scientific_name = response.xpath('//em/text()').get()
 
-        # Description
-        description_parts = response.xpath('//div[@itemprop="description"]//text()').getall()
-        description = " ".join([p.strip() for p in description_parts if p.strip()]) if description_parts else None
+        # Description - Try multiple selectors
+        # First try: structured data JSON-LD
+        description = None
+        try:
+            import json
+            import re
+            json_ld_match = re.search(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', response.text, re.DOTALL)
+            if json_ld_match:
+                json_data = json.loads(json_ld_match.group(1))
+                if isinstance(json_data, dict) and '@graph' in json_data:
+                    for item in json_data['@graph']:
+                        if item.get('@type') == 'WebPage' and 'description' in item:
+                            desc = item['description']
+                            # Only use if it's not the generic description
+                            if desc and 'high-quality pictures' not in desc.lower():
+                                description = desc
+                            break
+        except Exception:
+            pass
+        
+        # Second try: extract from paragraph tags
+        if not description:
+            # Try getting first few paragraphs from main content
+            description_parts = response.xpath('//div[@id="single-animal-text"]//p[position() <= 3]//text()').getall()
+            if description_parts:
+                description = " ".join([p.strip() for p in description_parts if p.strip() and len(p.strip()) > 20])
+                # Limit to reasonable length
+                if description and len(description) > 500:
+                    description = description[:500] + "..."
 
         # Key facts (list items)
         key_facts = response.xpath('//div[contains(@class, "animal-facts")]//li/text()').getall()
 
-        # Conservation status, habitat, diet — look for labelled spans
+        # Conservation status - extract from h2 section
+        conservation_status_list = response.xpath(
+            '//h2[contains(text(), "Conservation Status")]/following-sibling::ul//a/text()'
+        ).getall()
+        # Join multiple statuses (e.g., "Critically Endangered, Endangered")
+        conservation_status = ', '.join(conservation_status_list) if conservation_status_list else None
+        
+        # Habitat and diet — look for labelled spans
         def extract_label_value(label):
             val = response.xpath(f'//span[normalize-space(text())="{label}"]/following-sibling::span[1]/text()').get()
             return val.strip() if val else None
 
-        conservation_status = extract_label_value('Conservation Status')
         habitat = extract_label_value('Habitat')
         diet = extract_label_value('Diet')
 

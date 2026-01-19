@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pymongo import MongoClient
 
 # Configuration
@@ -14,10 +15,6 @@ def import_data():
     client = MongoClient(MONGO_URI)
     db = client[DB_NAME]
     collection = db[COLLECTION_NAME]
-
-    # Drop existing collection to avoid duplicates/stale data
-    print("Dropping existing collection...")
-    collection.drop()
 
     print(f"Reading data from {JSON_FILE}...")
     try:
@@ -66,15 +63,23 @@ def import_data():
                     except:
                         pass
                         
+        # Ensure we only keep dict documents
+        if isinstance(data, list):
+            data = [doc for doc in data if isinstance(doc, dict)]
+
         if isinstance(data, list) and len(data) > 0:
             print(f"Found {len(data)} records. Inserting...")
+            # Clear existing data only after we have valid parsed documents
+            collection.delete_many({})
             collection.insert_many(data)
             print("Import successful!")
         else:
-            print("JSON is empty or valid records count is 0.")
+            print("JSON is empty or contains no valid object records.")
+            sys.exit(1)
 
     except Exception as e:
         print(f"Critical error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     import_data()
