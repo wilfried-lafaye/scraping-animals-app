@@ -18,6 +18,8 @@ services:
 
   # Scraper service (Scrapy)
   scrapy:
+    profiles:
+      - scrape
     build:
       context: ./scrapy
       dockerfile: Dockerfile
