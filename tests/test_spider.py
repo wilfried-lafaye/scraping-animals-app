@@ -108,7 +108,7 @@ class TestAnimalsSpider:
     def test_animals_per_letter_limit(self, spider):
         """Verify that ANIMALS_PER_LETTER limit is configured."""
         assert hasattr(spider, 'ANIMALS_PER_LETTER')
-        assert spider.ANIMALS_PER_LETTER == 10
+        assert spider.ANIMALS_PER_LETTER == 10000
         assert isinstance(spider.ANIMALS_PER_LETTER, int)
 
 
