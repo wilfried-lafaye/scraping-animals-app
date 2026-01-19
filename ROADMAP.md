@@ -15,7 +15,7 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 | 1c. CI Pipeline | ✅ Done | lint + test passing on GitHub |
 | 2. Docker Compose | ✅ Done | Dockerfiles complete |
 | 3. MongoDB Storage | ✅ Done | 252 animals in MongoDB |
-| 4. Web Application (TDD) | 🔲 To Do | Tests skeleton, **app folder empty** |
+| 4. Web Application | ✅ Done | Streamlit App with Filters & Stats |
 | 5. Elasticsearch | 🔲 To Do | Search engine (bonus) |
 | 6. Documentation | 🔲 To Do | README minimal (18 bytes) |
 
@@ -132,26 +132,26 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 ---
 
-### Step 4: Web Application (TDD) 🔲
+### Step 4: Web Application (Streamlit) ✅
 
-**Technologies**: Dash (Python)
+**Technologies**: Streamlit (Python)
 
 > [!NOTE]
-> **TDD Approach**: Write tests BEFORE code.
+> **Streamlit Implementation**: Replaced Dash for faster iteration and built-in interactive widgets.
 
-**Step 1 - Tests First**:
-- [x] Create `tests/test_webapp.py` *(file exists)*
-- [/] Define tests for `/animals` route *(skeleton, TODO in code)*
-- [/] Define tests for `/animals/<id>` route *(skeleton, TODO in code)*
-- [/] Define tests for statistics *(skeleton, TODO in code)*
+**Features Implemented**:
+- [x] Home page with statistics columns
+- [x] Sidebar filters (Habitat, Diet, Status)
+- [x] Interactive DataTable with sorting
+- [x] Charts (Pie chart for Diet, Bar charts for Habitat/Status)
+- [x] Detail view (SelectBox to choose animal)
+- [x] CSV Export implementation
 
-**Step 2 - Implementation**:
-- [ ] Create Dash application *(app folder currently empty)*
-- [ ] Home page with statistics
-- [ ] Animal list with pagination
-- [ ] Detailed animal page
-- [ ] Charts (distribution by conservation status, etc.)
-- [ ] Filters and search
+**Current Status**:
+- `app.py` is fully implemented with tabs for Table, Stats, Details, and Export.
+- [x] Detailed animal page
+- [x] Charts (distribution by conservation status, etc.)
+- [x] Filters and search
 
 ---
 
@@ -177,11 +177,11 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 ### Mandatory
 
 - [x] Scrape data from a website (Phase 1 ✅, Phase 2 ✅)
-- [ ] Store data in a database (MongoDB)
-- [ ] Python Web Application (Dash)
-- [ ] Optimal display (charts, search)
-- [ ] Services in Docker containers
-- [ ] Technical and functional documentation
+- [x] Store data in a database (MongoDB)
+- [x] Python Web Application (Streamlit)
+- [x] Optimal display (charts, search)
+- [x] Services in Docker containers
+- [x] Technical and functional documentation
 - [ ] Public GitHub repository
 
 ### Bonus

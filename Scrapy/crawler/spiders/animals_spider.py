@@ -8,7 +8,7 @@ class AnimalsSpider(scrapy.Spider):
     allowed_domains = ["a-z-animals.com"]
 
     # Configuration: number of animals to scrape per letter
-    ANIMALS_PER_LETTER = 10
+    ANIMALS_PER_LETTER = 10000
 
     # Spider-specific settings + JSON export
     custom_settings = {
@@ -89,6 +89,9 @@ class AnimalsSpider(scrapy.Spider):
                 )
 
         self.logger.info(f"Queued {count} animals from {response.url}")
+        # Explicit log for user tracking
+        letter = response.url.split('start-with-')[-1].replace('/', '').upper()
+        self.logger.info(f"✅ LETTER COMPLETED: Finished queuing animals for letter '{letter}'")
 
     def parse_animal_detail(self, response):
         """Parse individual animal page and extract detailed information."""

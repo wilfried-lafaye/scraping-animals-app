@@ -3,3 +3,6 @@ pymongo
 pandas
 redis
 plotly
+folium
+streamlit-folium
+pycountry

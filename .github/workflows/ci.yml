@@ -21,7 +21,7 @@ jobs:
         run: pip install flake8
       
       - name: Run flake8
-        run: flake8 Scrapy/ Webapp/ --max-line-length=120 --ignore=E501,W503
+        run: flake8 scrapy/ webapp/ --max-line-length=120 --ignore=E501,W503
 
   test:
     runs-on: ubuntu-latest
@@ -47,11 +47,12 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -r Scrapy/requirements.txt
+          pip install -r scrapy/requirements.txt
           pip install pytest pytest-cov mongomock
       
       - name: Run tests
         env:
           MONGO_URI: mongodb://localhost:27017
           MONGO_DB: animals_test
-        run: pytest tests/ -v --cov=Scrapy/crawler --cov-report=term-missing
+        run: pytest tests/ -v --cov=scrapy/crawler --cov-report=term-missing
+

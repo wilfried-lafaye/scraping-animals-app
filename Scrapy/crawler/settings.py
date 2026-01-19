@@ -1,5 +1,6 @@
 # Scrapy settings for crawler project
 
+import os
 BOT_NAME = "crawler"
 
 SPIDER_MODULES = ["crawler.spiders"]
@@ -7,8 +8,10 @@ NEWSPIDER_MODULE = "crawler.spiders"
 
 # Respectful crawling
 ROBOTSTXT_OBEY = False
-DOWNLOAD_DELAY = 0.5
+DOWNLOAD_DELAY = 1  # Slightly increased delay
 CONCURRENT_REQUESTS = 1
+AUTOTHROTTLE_ENABLED = True
+COOKIES_ENABLED = True
 
 # Headers
 DEFAULT_REQUEST_HEADERS = {
@@ -27,8 +30,11 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = 'utf-8'
 FEED_EXPORT_INDENT = 2
 
+
 # MongoDB settings (can be overridden by environment variables)
-MONGO_URI = 'mongodb://scraper:scraper_password@localhost:27017/animals_db?authSource=admin'
+MONGO_URI = os.getenv(
+    'MONGO_URI',
+    'mongodb://scraper:scraper_password@localhost:27017/animals_db?authSource=admin')
 MONGO_DB = 'animals_db'
 MONGO_COLLECTION = 'animals'
 

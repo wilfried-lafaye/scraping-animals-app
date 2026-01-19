@@ -11,7 +11,7 @@ COLLECTION_NAME = "animals"
 
 def import_data():
     # Chemin absolu du fichier JSON
-    json_path = os.path.join(os.path.dirname(__file__), 'data', 'animals.json')
+    json_path = os.path.join(os.path.dirname(__file__), 'scrapy', 'data', 'animals.json')
     
     # Vérifier que le fichier existe
     if not os.path.exists(json_path):

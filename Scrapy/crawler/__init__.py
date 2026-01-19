@@ -17,4 +17,3 @@ DEFAULT_REQUEST_HEADERS = {
 }
 
 # Output is now configured in the spider's custom_settings
-

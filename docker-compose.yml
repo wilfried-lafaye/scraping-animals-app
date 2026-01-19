@@ -19,7 +19,7 @@ services:
   # Scraper service (Scrapy)
   scrapy:
     build:
-      context: ./Scrapy
+      context: ./scrapy
       dockerfile: Dockerfile
     container_name: scraping_scrapy
     depends_on:
@@ -28,15 +28,15 @@ services:
     environment:
       MONGO_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
     volumes:
-      - ./Scrapy/crawler:/app/crawler
-      - ./Scrapy/data:/app/data
+      - ./scrapy/crawler:/app/crawler
+      - ./scrapy/data:/app/data
     networks:
       - scraping_network
 
   # Web Application (Streamlit)
   webapp:
     build:
-      context: ./Webapp
+      context: ./webapp
       dockerfile: Dockerfile
     container_name: scraping_webapp
     ports:
@@ -47,7 +47,7 @@ services:
     environment:
       MONGODB_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
     volumes:
-      - ./Webapp:/app
+      - ./webapp:/app
     networks:
       - scraping_network
 
