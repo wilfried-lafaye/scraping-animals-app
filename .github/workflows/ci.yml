@@ -54,5 +54,6 @@ jobs:
         env:
           MONGO_URI: mongodb://localhost:27017
           MONGO_DB: animals_test
+          PYTHONPATH: ${{ github.workspace }}/scrapy
         run: pytest tests/ -v --cov=scrapy/crawler --cov-report=term-missing
 

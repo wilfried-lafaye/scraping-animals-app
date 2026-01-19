@@ -9,7 +9,7 @@ from scrapy.http import HtmlResponse, Request
 
 # Add Scrapy path to import the spider
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Scrapy'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scrapy'))
 
 from crawler.spiders.animals_spider import AnimalsSpider
 
