@@ -124,45 +124,31 @@ try:
         # Flatten data for DataFrame
         processed_data = []
         for item in data:
-            facts = item.get('facts', {})
-            classification = item.get('classification', {})
-            locations = item.get('locations', [])
-
-            # Extract key fields
+            # Extract key fields directy from flat structure
             row = {
-                'animal_name': item.get(
-                    'animal_name',
-                    'Unknown'),
-                'scientific_name': classification.get(
-                    'Scientific Name',
-                    'N/A'),
-                'conservation_status': facts.get(
-                    'Conservation Status',
-                    'Unknown'),
-                'diet': facts.get(
-                    'Diet',
-                    'Unknown'),
-                'habitat': facts.get(
-                    'Habitat',
-                    'Unknown'),
-                'description': facts.get(
-                    'Fun Fact',
-                    facts.get(
-                        'Most Distinctive Feature',
-                        'No description available.')),
-                'key_facts': [
-                    f"{k}: {v}" for k,
-                    v in facts.items() if k not in [
-                        'Diet',
-                        'Habitat',
-                        'Conservation Status']],
-                'classification': classification,
-                'locations': locations}
+                'animal_name': item.get('animal_name', 'Unknown'),
+                'scientific_name': item.get('scientific_name') or 'N/A',
+                'conservation_status': item.get('conservation_status') or 'Unknown',
+                'diet': item.get('diet') or 'Unknown',
+                'habitat': item.get('habitat') or 'Unknown',
+                'description': item.get('description') or 'No description available.',
+                'key_facts': item.get('key_facts', []),
+                'locations': item.get('locations', []),  # Handle missing locations
+                'image_url': item.get('image_url'),
+                'source_url': item.get('url')
+            }
 
             # Extraction logic
             row['Diet Category'] = extract_diet_category(row['diet'])
             row['Habitat Category'] = extract_habitat_category(row['habitat'])
-            row['Countries'] = extract_countries(locations)
+            
+            # Country extraction: Try locations first, then fallback to habitat text
+            countries = extract_countries(row['locations'])
+            if not countries and row['habitat'] != 'Unknown':
+                 from utils import extract_countries_from_text
+                 countries = extract_countries_from_text(row['habitat'])
+            
+            row['Countries'] = countries
 
             processed_data.append(row)
 
@@ -343,11 +329,10 @@ try:
                             st.write(f"• {fact}")
 
             with c2:
-                st.markdown("### Taxonomy")
-                classification = animal.get('classification', {})
-                if isinstance(classification, dict):
-                    for key, val in classification.items():
-                        st.markdown(f"**{key}:** {val}")
+                st.markdown("### More Info")
+                if animal.get('source_url'):
+                    st.link_button("View Source", animal.get('source_url'))
+
 
         else:
             st.error("Animal not found.")

@@ -33,6 +33,22 @@ services:
     networks:
       - scraping_network
 
+  # Seed Database
+  mongo-seed:
+    image: python:3.10-slim
+    container_name: scraping_mongo_seed
+    depends_on:
+      - mongodb
+    volumes:
+      - ./scrapy/data/animals.json:/app/animals.json
+      - ./scripts/import_script.py:/app/import_script.py
+    working_dir: /app
+    environment:
+      MONGODB_URI: "mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin"
+    command: sh -c "pip install pymongo && python import_script.py"
+    networks:
+      - scraping_network
+
   # Web Application (Streamlit)
   webapp:
     build:
@@ -42,8 +58,12 @@ services:
     ports:
       - "8501:8501"
     depends_on:
-      - mongodb
-      - elasticsearch
+      mongodb:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      mongo-seed:
+        condition: service_completed_successfully
     environment:
       MONGODB_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
     volumes:
