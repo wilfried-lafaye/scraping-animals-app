@@ -68,6 +68,7 @@ services:
         condition: service_completed_successfully
     environment:
       MONGODB_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
+      ELASTICSEARCH_URL: http://elasticsearch:9200
     volumes:
       - ./webapp:/app
     networks:

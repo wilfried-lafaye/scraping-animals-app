@@ -1,65 +1,111 @@
-# 🦁 Scraping Animals
+# 🦁 Scraping Animals & Search Engine
 
-Application web de visualisation de données animales, construite avec Scrapy, MongoDB, et Streamlit.
+A full-stack data engineering project that scrapes animal data from [A-Z Animals](https://a-z-animals.com/), indexes it into **Elasticsearch**, and serves it via a **Streamlit** web application with advanced search capabilities.
 
-## 📋 Description
+## 🚀 Features
 
-Ce projet scrape les données de [a-z-animals.com](https://a-z-animals.com) et les affiche dans une interface web interactive avec :
-- Recherche par nom
-- Carte choroplèthe de distribution mondiale
-- Fiches détaillées par animal
-- Filtres par régime alimentaire et habitat
+- **Robust Scraper**:
+  - Built with **Scrapy**.
+  - **Generic Extraction**: Automatically captures *all* available fields (Physical Characteristics, Fun Facts, etc.) dynamically.
+  - **Resilient**: Uses `scrapy-impersonate` to bypass WAF/403 protections.
+  - **MongoDB Storage**: Directly pipelines scraped data into a MongoDB database.
 
-## 🚀 Installation
+- **Search Engine**:
+  - **Elasticsearch Integration**: Fast, full-text search with typo tolerance ("fuzziness").
+  - **Fallback Mechanism**: Automatically defaults to basic substring search if Elasticsearch is offline.
 
-### Prérequis
+- **Web Application**:
+  - **Streamlit Interface**: Interactive dashboard to explore animal data.
+  - **Filtering**: Filter by Diet, Habitat, Country.
+  - **Geospatial Visualization**: Folium maps showing animal locations.
+  - **Statistics**: Real-time metrics on the dataset.
+
+## 🛠 Architecture
+
+```mermaid
+graph LR
+    A[A-Z Animals] -->|Scrapy| B(MongoDB)
+    B -->|Index Script| C(Elasticsearch)
+    C <-->|SearchClient| D[Streamlit Web App]
+    B <-->|PyMongo| D
+    User -->|Browser| D
+```
+
+## 📦 Installation
+
+### Prerequisites
 - Docker & Docker Compose
-- Python 3.11+
+- Python 3.9+ (for local development)
 
-### Lancement
+### Quick Start (Docker)
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/wilfried-lafaye/scraping-animals.git
+    cd scraping-animals
+    ```
+
+2.  **Launch Services**:
+    ```bash
+    docker compose up -d --build
+    ```
+    This starts:
+    - MongoDB (Port 27017)
+    - Elasticsearch (Port 9200)
+    - Kibana (Port 5601)
+    - Streamlit App (Port 8501)
+
+3.  **Index Data**:
+    Once services are running, index the data into Elasticsearch:
+    ```bash
+    # From your local machine (requires python env)
+    ./.venv/bin/python3 scripts/index_animals_es.py
+    
+    # OR from within the web container
+    docker compose exec webapp python3 ../scripts/index_animals_es.py
+    ```
+
+4.  **Access the App**:
+    Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+## 🕷️ Scraper Usage
+
+To run the scraper manually (local environment):
 
 ```bash
-# Cloner le repo
-git clone https://github.com/[username]/scraping-animals.git
-cd scraping-animals
+# Activate virtual environment
+source .venv/bin/activate
 
-# Lancer les services
-docker-compose up -d
+# Go to scrapy directory
+cd scrapy
 
-# Importer les données (si nécessaire)
-docker cp scrapy/data/animals.json scraping_webapp:/app/animals.json
-docker exec scraping_webapp python3 /app/import_script.py
+# Run spider (limited to 10 items for testing)
+scrapy crawl animals -s CLOSESPIDER_ITEMCOUNT=10
 ```
 
-L'application sera accessible sur **http://localhost:8501**
+## 🧪 Testing
 
-## 🏗️ Architecture
+Run quality assurance tests:
 
+```bash
+# Run unit tests (Spider logic, JSON validation)
+pytest tests/
+
+# Check code style
+flake8 webapp/ scrapy/
 ```
-scraping-animals/
-├── scrapy/          # Spider Scrapy
-├── webapp/          # Application Streamlit
-├── scripts/         # Utilitaires d'import/nettoyage
-├── tests/           # Tests unitaires
-└── docker-compose.yml
-```
 
-## 🛠️ Technologies
+## 📂 Project Structure
 
-- **Scraping**: Scrapy + scrapy-impersonate
-- **Database**: MongoDB 7.0
-- **Frontend**: Streamlit
-- **Containerisation**: Docker Compose
+- `scrapy/`: Scrapy project (Spider, Pipelines, Settings).
+- `webapp/`: Streamlit application code.
+- `scripts/`: Utility scripts (Indexing).
+- `tests/`: Unit and integration tests.
+- `data/`: Local storage for scraped JSON data.
 
-## 📊 Données
+## 📝 Roadmap & Status
 
-- **191 animaux** actuellement dans la base
-- Informations : nom, classification, faits, localisation géographique
+See [ROADMAP.md](./ROADMAP.md) for detailed progress history.
 
-## 👥 Équipe
-
-- Projet réalisé dans le cadre du cours Data Engineering - ESIEE Paris E4
-
-## 📄 License
-
-MIT
+---
+*Created by the Data Engineering Team at ESIEE Paris.*

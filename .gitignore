@@ -2,6 +2,13 @@
 scrapy/data/*
 !scrapy/data/animals.json
 
+# Temporary Test Files
+example.html
+example2.html
+
+# Scrapy Runtime
+scrapy/jobstate/
+
 # Python
 __pycache__/
 .pytest_cache/

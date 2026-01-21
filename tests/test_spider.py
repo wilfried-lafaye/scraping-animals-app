@@ -49,6 +49,23 @@ SAMPLE_ANIMAL_HTML = """
         <span>Diet</span>
         <span>Carnivore</span>
     </div>
+    <h2>Physical Characteristics</h2>
+    <div>
+        <dl>
+             <dt>Color</dt>
+             <dd>Orange, Black, White</dd>
+             <dt>Top Speed</dt>
+             <dd>60 mph</dd>
+        </dl>
+    </div>
+    <div class="row">
+        <dl class="row" title="Facts">
+             <dt>Prey</dt>
+             <dd>Deer, Wild Boar</dd>
+             <dt>Group Behavior</dt>
+             <dd>Solitary</dd>
+        </dl>
+    </div>
 </body>
 </html>
 """
@@ -104,6 +121,21 @@ class TestAnimalsSpider:
         assert len(results) == 1
         for field in required_fields:
             assert field in results[0], f"Missing required field: {field}"
+
+    def test_generic_extraction(self, spider, mock_response):
+        """Verify that generic facts and physical characteristics are extracted."""
+        results = list(spider.parse_animal_detail(mock_response))
+        data = results[0]
+        
+        # Check Physical Characteristics
+        assert 'physical_characteristics' in data
+        assert data['physical_characteristics'].get('Color') == 'Orange, Black, White'
+        assert data['physical_characteristics'].get('Top Speed') == '60 mph'
+        
+        # Check Facts
+        assert 'facts' in data
+        assert data['facts'].get('Prey') == 'Deer, Wild Boar'
+        assert data['facts'].get('Group Behavior') == 'Solitary'
 
     def test_animals_per_letter_limit(self, spider):
         """Verify that ANIMALS_PER_LETTER limit is configured."""

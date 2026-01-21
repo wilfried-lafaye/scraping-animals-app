@@ -16,8 +16,9 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 | 2. Docker Compose | ✅ Done | Dockerfiles complete |
 | 3. MongoDB Storage | ✅ Done | 252 animals in MongoDB |
 | 4. Web Application | ✅ Done | Streamlit App with Filters & Stats |
-| 5. Elasticsearch | 🔲 To Do | Search engine (bonus) |
-| 6. Documentation | 🔲 To Do | README minimal (18 bytes) |
+| 5. Elasticsearch | ✅ Done | Indexing + Search integrated |
+| 6. Documentation | ✅ Done | README minimal (18 bytes) |
+| 7. Standardization | 🔲 To Do | Future Work (Glossary) |
 
 ---
 
@@ -155,18 +156,26 @@ Build a web application that displays scraped animal data from [a-z-animals.com]
 
 ---
 
-### Step 5: Elasticsearch (Bonus) 🔲
+### Step 5: Elasticsearch (Bonus) ✅ Done
 
-- [ ] Index animals in Elasticsearch
-- [ ] Create search endpoint
-- [ ] Integrate search into web interface
+- [x] Index animals in Elasticsearch
+- [x] Create search endpoint (via SearchClient)
+- [x] Integrate search into web interface
 
 ---
 
-### Step 6: Documentation 🔲
+### Step 6: Data Standardization (Future) 🔲
 
-- [ ] Complete README.md
-- [ ] Application screenshots
+- [ ] Use `https://a-z-animals.com/reference/glossary/` to build a strict schema
+- [ ] Normalize fields like "Litter Size", "Top Speed", "Gestation Period"
+- [ ] Update Scrapy Item to reflect these standard keys
+
+---
+
+### Step 7: Documentation ✅ Done
+
+- [x] Complete README.md
+- [x] Application screenshots (See Walkthrough)
 - [ ] Deployment instructions
 - [ ] Push to public GitHub
 

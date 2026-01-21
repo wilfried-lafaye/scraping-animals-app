@@ -29,7 +29,8 @@ class AnimalsSpider(scrapy.Spider):
             },
         },
         # Allow resuming long crawls (persist scheduler state)
-        'JOBDIR': 'jobstate/animals'
+        'JOBDIR': 'jobstate/animals',
+        'ROBOTSTXT_OBEY': False
     }
 
     def start_requests(self):
@@ -37,7 +38,7 @@ class AnimalsSpider(scrapy.Spider):
         yield scrapy.Request(
             url="https://a-z-animals.com/animals/",
             callback=self.parse,
-            meta={"impersonate": "chrome120"}
+            meta={"impersonate": "safari15_5"}
         )
 
     def parse(self, response):
@@ -53,7 +54,7 @@ class AnimalsSpider(scrapy.Spider):
             yield scrapy.Request(
                 full_url,
                 callback=self.parse_letter_page,
-                meta={"impersonate": "chrome120"}
+                meta={"impersonate": "safari15_5"}
             )
 
     def parse_letter_page(self, response):
@@ -84,7 +85,7 @@ class AnimalsSpider(scrapy.Spider):
                     url=urljoin(response.url, url),
                     callback=self.parse_animal_detail,
                     meta={
-                        "impersonate": "chrome120",
+                        "impersonate": "safari15_5",
                         "animal_name": name.strip(),
                         "source_page": response.url
                     }
@@ -134,20 +135,80 @@ class AnimalsSpider(scrapy.Spider):
         if image_url:
             image_url = urljoin(response.url, image_url)
 
-        # Extract Scientific Classification (taxonomy)
-        classification = {}
-        classification_dl = response.xpath('//dl[contains(@class, "animal-facts")]')
-        if classification_dl:
-            dt_elements = classification_dl.xpath('.//dt')
-            dd_elements = classification_dl.xpath('.//dd')
-            for dt, dd in zip(dt_elements, dd_elements):
-                label = dt.xpath('string(.)').get()
-                value = dd.xpath('string(.)').get()
-                if label and value:
-                    label = label.strip().rstrip(':')
-                    value = value.strip()
-                    classification[label] = value
+        # Helper to extract key-value pairs from a specific DL
+        def extract_dl(selector_xpath):
+            data = {}
+            dl_elements = response.xpath(selector_xpath)
+            for dl in dl_elements:
+                dt_elements = dl.xpath('.//dt')
+                dd_elements = dl.xpath('.//dd')
+                for dt, dd in zip(dt_elements, dd_elements):
+                    label = dt.xpath('string(.)').get()
+                    value = dd.xpath('string(.)').get()
+                    if label and value:
+                        # Clean label (remove colon) and value
+                        clean_label = label.strip().rstrip(':')
+                        clean_value = value.strip()
+                        if clean_label and clean_value:
+                            data[clean_label] = clean_value
+            return data
 
+        # 1. Classification (Taxonomy) - usually in .animal-facts or similar
+        # Note: On a-z-animals, the taxonomy is often in a specific box. we use the existing specific class.
+        classification = extract_dl('//dl[contains(@class, "animal-facts")]')
+
+        # 2. Key Facts (The top box with "Fun Fact", "Prey", etc.)
+        # Often has class "row" and might be inside a div with specific attributes
+        # We look for the "Facts" section specifically to keep them separate from physical traits if possible.
+        facts = extract_dl('//div[contains(@class, "row")]//dl[contains(@class, "row")]') 
+        # Fallback or additional: sometimes they are just in .row class DLs.
+        
+        # 3. Physical Characteristics (The bottom box with "Color", "Skin Type", etc.)
+        # These are often in a section with an H2 "Physical Characteristics".
+        physical_characteristics = {}
+        # Try to find the DL following the "Physical Characteristics" header
+        phys_header = response.xpath('//h2[contains(text(), "Physical Characteristics")]')
+        if phys_header:
+            # The DL is usually inside the next div or directly following
+            # We can try a broader approach: Look for any DL that hasn't been captured yet?
+            # Or specifically look for the container.
+            # Let's try to grab the container following the header.
+            # Try to grab the container following the header.
+            # Case 1: Wrapped in a div (common)
+            phys_dl = phys_header.xpath('./following-sibling::div[1]//dl')
+            # Case 2: Direct sibling (as seen in example.html)
+            if not phys_dl:
+                phys_dl = phys_header.xpath('./following-sibling::dl[1]')
+            
+            if phys_dl:
+                 # Extract standard
+                 for dl in phys_dl:
+                     dt_elements = dl.xpath('.//dt')
+                     dd_elements = dl.xpath('.//dd')
+                     for dt, dd in zip(dt_elements, dd_elements):
+                         label = dt.xpath('string(.)').get()
+                         value = dd.xpath('string(.)').get()
+                         if label and value:
+                             physical_characteristics[label.strip().rstrip(':')] = value.strip()
+
+        # If empty, try a more generic approach to capture ALL DLs and categorize them?
+        # For this task, we want to be sure we get everything.
+        # Let's aggregate ALL data into a "general_facts" if we aren't sure, 
+        # but the user asked for "generic", implies getting everything available.
+        
+        # Let's use a robust strategy: Capture ALL dl items into a single 'details' dict for safety, 
+        # then also allow specific buckets if we can identify them.
+        all_specs = extract_dl('//dl')
+        
+        # Merge physical chars into all_specs to ensure we have them
+        all_specs.update(physical_characteristics)
+        all_specs.update(facts)
+        all_specs.update(classification)
+
+        # Legacy fields extraction (Habitat, Diet) using the new generic data if available
+        habitat = all_specs.get('Habitat', all_specs.get('Most Distinctive Feature', None))
+        diet = all_specs.get('Diet', all_specs.get('Favorite Food', None))
+        
         # Extract fields expected by unit tests / JSON schema
         scientific_name = response.xpath('//em/text()').get()
 
@@ -170,7 +231,7 @@ class AnimalsSpider(scrapy.Spider):
                             break
         except Exception:
             pass
-        
+
         # Second try: extract from paragraph tags
         if not description:
             # Try getting first few paragraphs from main content
@@ -190,31 +251,8 @@ class AnimalsSpider(scrapy.Spider):
         ).getall()
         # Join multiple statuses (e.g., "Critically Endangered, Endangered")
         conservation_status = ', '.join(conservation_status_list) if conservation_status_list else None
-        
-        # Habitat and diet — look for labelled spans
-        def extract_label_value(label):
-            val = response.xpath(f'//span[normalize-space(text())="{label}"]/following-sibling::span[1]/text()').get()
-            return val.strip() if val else None
 
-        habitat = extract_label_value('Habitat')
-        diet = extract_label_value('Diet')
-
-        # Extract Animal Facts (Main Prey, Habitat, Predators, Diet, etc.)
-        facts = {}
-        facts_dl = response.xpath('//dl[@class="row" and contains(@title, "Facts")]')
-        if facts_dl:
-            dt_elements = facts_dl.xpath('.//dt')
-            dd_elements = facts_dl.xpath('.//dd')
-            for dt, dd in zip(dt_elements, dd_elements):
-                label = dt.xpath('string(.)').get()
-                value = dd.xpath('string(.)').get()
-                if label and value:
-                    label = label.strip().rstrip(':')
-                    value = value.strip()
-                    if label and value:
-                        facts[label] = value
-
-        # Extract Locations (continents/regions where the animal is found)
+        # Locations
         locations = response.xpath(
             '//a[contains(@href, "/animals/location/")]/text()'
         ).getall()
@@ -233,9 +271,11 @@ class AnimalsSpider(scrapy.Spider):
             'habitat': habitat,
             'diet': diet,
             'image_url': image_url,
-            'classification': classification if classification else None,
-            'facts': facts if facts else None,
-            'locations': locations if locations else [],
+            'classification': classification,
+            'facts': facts,
+            'physical_characteristics': physical_characteristics,
+            # 'all_data': all_specs, # Optional: include everything flat if needed
+            'locations': locations,
             'url': response.url,
             'source_page': source_page
         }

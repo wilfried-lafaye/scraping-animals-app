@@ -121,7 +121,7 @@ def extract_countries_from_text(text):
         return []
 
     found_countries = set()
-    
+
     # Common overrides dictionary (Name -> Alpha_3)
     overrides = {
         'USA': 'USA', 'United States': 'USA', 'America': 'USA',
@@ -139,24 +139,24 @@ def extract_countries_from_text(text):
     # 1. Check overrides
     for country_name, code in overrides.items():
         if country_name in text:
-             found_countries.add(code)
+            found_countries.add(code)
 
     # 2. Check pycountry names with Regex boundaries to avoid partial matches
     # (e.g. avoiding 'India' matching inside 'Indian Ocean' if possible, though 'Indian' isn't 'India')
-    # But 'Guinea' in 'Guinea Pig' is a problem. 
+    # But 'Guinea' in 'Guinea Pig' is a problem.
     # exclusion list for common false positives
-    exclusions = ['Guinea', 'Turkey', 'Jordan', 'Jersey', 'Georgia'] 
-    
+    exclusions = ['Guinea', 'Turkey', 'Jordan', 'Jersey', 'Georgia']
+
     for country in pycountry.countries:
         try:
             name = country.name
-            if name in exclusions: 
+            if name in exclusions:
                 continue
-                
+
             # Regex for whole word match
             if re.search(r'\b' + re.escape(name) + r'\b', text, re.IGNORECASE):
                 found_countries.add(country.alpha_3)
-        except:
+        except Exception:
             continue
 
     return list(found_countries)

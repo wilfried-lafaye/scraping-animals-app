@@ -1,5 +1,6 @@
 """Application Streamlit pour afficher les animaux - Améliorée"""
 from utils import extract_diet_category, extract_habitat_category, extract_countries, extract_countries_from_text
+from search_client import SearchClient
 from streamlit_folium import st_folium
 import folium
 import streamlit as st
@@ -153,7 +154,7 @@ try:
                 clean_status = raw_status
             else:
                 clean_status = 'Unknown'
-            
+
             # Extract key fields directy from flat structure
             row = {
                 'animal_name': item.get('animal_name', 'Unknown'),
@@ -175,7 +176,7 @@ try:
             if isinstance(row.get('facts'), dict) and 'Diet' in row['facts']:
                 diet_text = row['facts']['Diet']
             row['Diet Category'] = extract_diet_category(diet_text)
-            
+
             # Priority order for habitat: facts['Habitat'] > habitat field > locations
             habitat_text = None
             if isinstance(row.get('facts'), dict) and 'Habitat' in row['facts']:
@@ -186,12 +187,12 @@ try:
                 # Join locations to create habitat text
                 habitat_text = ', '.join(row['locations'])
             row['Habitat Category'] = extract_habitat_category(habitat_text)
-            
+
             # Country extraction: Try locations first, then fallback to habitat text
             countries = extract_countries(row['locations'])
             if not countries and row['habitat'] != 'Unknown':
                 countries = extract_countries_from_text(row['habitat'])
-            
+
             row['Countries'] = countries
 
             processed_data.append(row)
@@ -200,6 +201,7 @@ try:
         return df
 
     df_animals = load_data()
+    search_client = SearchClient()
 
     # ---------------------------------------------------------
     # MAIN LAYOUT & SEARCH
@@ -227,8 +229,18 @@ try:
     filtered_df = df_animals.copy()
 
     if search_query:
-        filtered_df = filtered_df[filtered_df['animal_name'].str.contains(
-            search_query, case=False, na=False)]
+        if search_client.is_connected():
+            es_results = search_client.search_animals(search_query)
+            # Filter and preserve order (roughly, or just filter)
+            # Using isin allows filtering, but we might want to prioritize ES matches
+            if es_results:
+                filtered_df = filtered_df[filtered_df['animal_name'].isin(es_results)]
+            else:
+                filtered_df = filtered_df.iloc[0:0]
+        else:
+            # Fallback to string matching
+            filtered_df = filtered_df[filtered_df['animal_name'].str.contains(
+                search_query, case=False, na=False)]
     # Apply sidebar filters
     if len(filtered_df):
         if selected_diets:
@@ -440,7 +452,6 @@ try:
                         st.link_button("View Source", animal.get('source_url'))
                     else:
                         st.markdown(f"[View Source]({animal.get('source_url')})")
-
 
         else:
             st.error("Animal not found.")
