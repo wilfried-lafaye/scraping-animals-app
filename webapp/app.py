@@ -217,11 +217,11 @@ try:
     # Sidebar filters
     with st.sidebar:
         st.header("Filters")
-        diet_choices = sorted([c for c in df_animals["Diet Category"].dropna().unique() if c])
-        habitat_choices = sorted([c for c in df_animals["Habitat Category"].dropna().unique() if c])
+        diet_choices = sorted([c for c in df_animals["Diet Category"].dropna().unique() if c and c != 'Unknown'])
+        habitat_choices = sorted([c for c in df_animals["Habitat Category"].dropna().unique() if c and c != 'Unknown'])
 
-        selected_diets = st.multiselect("Diet", options=diet_choices, default=diet_choices)
-        selected_habitats = st.multiselect("Habitat", options=habitat_choices, default=habitat_choices)
+        selected_diets = st.multiselect("Diet", options=diet_choices, default=[])
+        selected_habitats = st.multiselect("Habitat", options=habitat_choices, default=[])
 
     # ---------------------------------------------------------
     # FILTERING LOGIC (SEARCH + FILTERS)
@@ -275,10 +275,10 @@ try:
             f'<div class="metric-card"><h3>{animals_count}</h3><p>Results</p></div>',
             unsafe_allow_html=True)
         c3.markdown(
-            f'<div class="metric-card"><h3>{filtered_df["Habitat Category"].nunique()}</h3><p>Habitats</p></div>',
+            f'<div class="metric-card"><h3>{len([h for h in filtered_df["Habitat Category"].unique() if h and h != "Unknown"])}</h3><p>Habitats</p></div>',
             unsafe_allow_html=True)
         c4.markdown(
-            f'<div class="metric-card"><h3>{filtered_df["Diet Category"].nunique()}</h3><p>Diets</p></div>',
+            f'<div class="metric-card"><h3>{len([d for d in filtered_df["Diet Category"].unique() if d and d != "Unknown"])}</h3><p>Diets</p></div>',
             unsafe_allow_html=True)
 
         st.markdown("### Animal List")
@@ -357,11 +357,20 @@ try:
         # Charts section
         st.markdown("### Insights")
         if not filtered_df.empty:
-            diet_counts = filtered_df["Diet Category"].value_counts().reset_index()
-            diet_counts.columns = ["Diet", "Count"]
-            fig1 = px.bar(diet_counts, x="Diet", y="Count", title="Diet Distribution", text="Count")
-            fig1.update_traces(textposition='outside')
-            st.plotly_chart(fig1, use_container_width=True)
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                diet_counts = filtered_df["Diet Category"].value_counts().reset_index()
+                diet_counts.columns = ["Diet", "Count"]
+                fig1 = px.bar(diet_counts, x="Diet", y="Count", title="Diet Distribution", text="Count")
+                fig1.update_traces(textposition='outside')
+                st.plotly_chart(fig1, use_container_width=True)
+            
+            with col2:
+                conservation_counts = filtered_df[filtered_df["conservation_status"] != "Unknown"]["conservation_status"].value_counts().reset_index()
+                conservation_counts.columns = ["Status", "Count"]
+                fig2 = px.pie(conservation_counts, values="Count", names="Status", title="Conservation Status Distribution")
+                st.plotly_chart(fig2, use_container_width=True)
 
     # ---------------------------------------------------------
     # VIEW: DETAIL

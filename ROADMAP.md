@@ -1,219 +1,109 @@
 # 🗺️ Roadmap - Scraping Animals
 
-## 📋 Project Objective
+## 🎯 Objectif
 
-Build a web application that displays scraped animal data from [a-z-animals.com](https://a-z-animals.com), with database storage and Docker containerization.
+Construire une application web qui **scrape** les données d’animaux depuis [a-z-animals.com](https://a-z-animals.com), les **stocke dans MongoDB**, les **indexe dans Elasticsearch**, et les **expose via Streamlit**.
 
 ---
 
-## ✅ Progress Status
+## ✅ Statut global
 
-| Step | Status | Description |
+| Étape | Statut | Description |
 |------|--------|-------------|
-| 1. Scraping | ✅ Done | Animal list + Details (252 animaux) |
-| 1b. Scraper Unit Tests | ✅ Done | 9 tests implemented & passing |
-| 1c. CI Pipeline | ✅ Done | lint + test passing on GitHub |
-| 2. Docker Compose | ✅ Done | Dockerfiles complete |
-| 3. MongoDB Storage | ✅ Done | 252 animals in MongoDB |
-| 4. Web Application | ✅ Done | Streamlit App with Filters & Stats |
-| 5. Elasticsearch | ✅ Done | Indexing + Search integrated |
-| 6. Documentation | ✅ Done | README minimal (18 bytes) |
-| 7. Standardization | 🔲 To Do | Future Work (Glossary) |
+| 1. Scraping | ✅ Fait | Liste + détails (≈252 animaux) |
+| 2. Docker Compose | ✅ Fait | Dockerfiles et orchestration | 
+| 3. MongoDB | ✅ Fait | Insertion + validation des données |
+| 4. Web App | ✅ Fait | Streamlit avec filtres, stats, exports |
+| 5. Elasticsearch | ✅ Fait | Indexation + recherche intégrée |
+| 6. Documentation | ✅ Fait | README à jour |
 
 ---
 
-## 📦 Detailed Steps
+## 🧩 Détails par module
 
-### Step 1: Scraping
+### 1) Scraping (Scrapy) ✅
 
-#### Phase 1: Animal List ✅
+- [x] Spider `animals_spider.py`
+- [x] Contournement anti-bot via `scrapy-impersonate`
+- [x] Extraction des champs détaillés (scientific name, habitat, diet, etc.)
+- [x] Limite d’échantillonnage paramétrable (ex. 10/lettre)
 
-- [x] Create Scrapy spider (`animals_spider.py`)
-- [x] Bypass anti-bot protection with `scrapy-impersonate`
-- [x] Retrieve animal list (name + URL)
-- [x] 3019 animals indexed
-
-**Current Data**:
+**Exemple de données** :
 ```json
 {
-    "animal_name": "Tiger",
-    "url": "https://a-z-animals.com/animals/tiger/",
-    "source_page": "..."
+  "animal_name": "Tiger",
+  "scientific_name": "Panthera tigris",
+  "description": "The tiger is the largest...",
+  "key_facts": ["Largest living cat species"],
+  "conservation_status": "Endangered",
+  "habitat": "Asia",
+  "diet": "Carnivore"
 }
 ```
 
-#### Phase 2: Animal Details ✅
+### 2) Docker Compose ✅
 
-**Approach**: Modify existing spider to follow each URL and extract detailed data.
+- [x] MongoDB + Elasticsearch + Kibana + Webapp
+- [x] Réseaux et dépendances inter-services
+- [x] Dockerfiles du scraper et de l’app Streamlit
 
-- [x] Add `parse_animal_detail()` method
-- [x] Extract information from each animal page:
-  - Scientific name
-  - Description
-  - Key Facts
-  - Conservation Status
-  - Habitat
-  - Diet
-  - ~~Main image~~ *(removed - too complex)*
-- [x] Limit to ~200 animals for the project (10/letter = 260)
+### 3) MongoDB ✅
 
-**Target Data**:
-```json
-{
-    "animal_name": "Tiger",
-    "scientific_name": "Panthera Tigris",
-    "description": "The tiger is the largest...",
-    "key_facts": ["Largest living cat species", ...],
-    "conservation_status": "Endangered",
-    "habitat": "Asia",
-    "diet": "Carnivore"
-}
-```
+- [x] Pipeline d’insertion Scrapy
+- [x] Tests d’intégration sur une vraie instance MongoDB
+- [x] Vérification des données insérées
 
-**Performance Optimizations**:
-- `DOWNLOAD_DELAY`: 0.5s (reduced from 2s)
-- Sampling: X animals per letter (26 letters)
-- Example: 10 animals/letter = 260 animals total
+### 4) Web App (Streamlit) ✅
 
----
+- [x] Filtres (habitat, diet, statut)
+- [x] Table interactive + export CSV
+- [x] Graphiques (distribution)
+- [x] Fiche détaillée par animal
 
-### Step 2: Docker Compose ✅ Done
+### 5) Elasticsearch ✅
 
-- [x] Configure MongoDB
-- [x] Configure Elasticsearch + Kibana
-- [x] Configure network between services
-- [x] Complete scraper Dockerfile
-- [x] Complete webapp Dockerfile
+- [x] Indexation des documents
+- [x] Recherche fuzzy via `SearchClient`
+- [x] Fallback si ES indisponible
 
----
+### 6) Documentation ✅
 
-### Step 1b: Scraper Unit Tests ✅ Done
+- [x] README mis à jour
+- [ ] Ajouter des instructions de déploiement
 
-> [!IMPORTANT]
-> **Critical step**: Validate JSON format before any DB insertion.
+## ✅ Checklist des exigences
 
-- [x] Create `tests/test_spider.py`
-- [x] Test `parse_animal_detail()` with mocked HTML responses
-- [x] Verify exported data format (required fields present)
-- [x] Validate JSON with schema
-- [x] Test spider configuration (name, domains, settings)
+### Obligatoire
 
-**Tests implemented (9 total)**:
-- `TestAnimalsSpider`: 4 tests (parse_animal_detail, required fields, limit)
-- `TestJsonValidation`: 2 tests (schema, null names)
-- `TestSpiderConfiguration`: 3 tests (name, domains, settings)
-
----
-
-### Step 1c: CI Pipeline ✅ Done
-
-> [!NOTE]
-> **Pipeline verified and passing on GitHub Actions!**
-
-- [x] Create `.github/workflows/ci.yml`
-- [x] `lint` job: flake8 on each push
-- [x] `test` job: pytest with MongoDB Service Container
-- [x] Verify pipeline on GitHub ✅
-
-**Dev/Prod Parity**: Uses a real MongoDB instance (not mongomock) via Docker Service Container in CI.
-
----
-
-### Step 3: MongoDB Storage ✅ Done
-
-- [x] Add `pymongo` to dependencies
-- [x] Create Scrapy Item Pipeline for MongoDB (`pipelines.py`)
-- [x] Test data insertion
-- [x] Verify data in MongoDB (252 animals inserted)
-
-**Integration Tests (real MongoDB instance)**:
-- [x] Test Spider → MongoDB pipeline with Docker Service Container
-- [x] Verify connection and insertion
-- [x] Ensure Dev/Prod parity
-
----
-
-### Step 4: Web Application (Streamlit) ✅
-
-**Technologies**: Streamlit (Python)
-
-> [!NOTE]
-> **Streamlit Implementation**: Replaced Dash for faster iteration and built-in interactive widgets.
-
-**Features Implemented**:
-- [x] Home page with statistics columns
-- [x] Sidebar filters (Habitat, Diet, Status)
-- [x] Interactive DataTable with sorting
-- [x] Charts (Pie chart for Diet, Bar charts for Habitat/Status)
-- [x] Detail view (SelectBox to choose animal)
-- [x] CSV Export implementation
-
-**Current Status**:
-- `app.py` is fully implemented with tabs for Table, Stats, Details, and Export.
-- [x] Detailed animal page
-- [x] Charts (distribution by conservation status, etc.)
-- [x] Filters and search
-
----
-
-### Step 5: Elasticsearch (Bonus) ✅ Done
-
-- [x] Index animals in Elasticsearch
-- [x] Create search endpoint (via SearchClient)
-- [x] Integrate search into web interface
-
----
-
-### Step 6: Data Standardization (Future) 🔲
-
-- [ ] Use `https://a-z-animals.com/reference/glossary/` to build a strict schema
-- [ ] Normalize fields like "Litter Size", "Top Speed", "Gestation Period"
-- [ ] Update Scrapy Item to reflect these standard keys
-
----
-
-### Step 7: Documentation ✅ Done
-
-- [x] Complete README.md
-- [x] Application screenshots (See Walkthrough)
-- [ ] Deployment instructions
-- [ ] Push to public GitHub
-
----
-
-## 🎯 Requirements Checklist
-
-### Mandatory
-
-- [x] Scrape data from a website (Phase 1 ✅, Phase 2 ✅)
-- [x] Store data in a database (MongoDB)
-- [x] Python Web Application (Streamlit)
-- [x] Optimal display (charts, search)
-- [x] Services in Docker containers
-- [x] Technical and functional documentation
-- [ ] Public GitHub repository
+- [x] Scraping d’un site web
+- [x] Stockage en base (MongoDB)
+- [x] Web app Python (Streamlit)
+- [x] Visualisations et recherche
+- [x] Services conteneurisés
+- [x] Documentation technique/func
+- [ ] Dépôt GitHub public
 
 ### Bonus
 
-- [ ] Real-time scraping on startup
-- [x] Use of docker-compose
-- [ ] Search engine with Elasticsearch
+- [ ] Scraping au démarrage
+- [x] docker-compose
+- [x] Recherche Elasticsearch
 
 ---
 
-## 👥 Team
+## 👥 Équipe
 
-- **Partner**: [To be completed]
+- **Partenaire** : Keren BENADIBA & Wilfried LAFAYE
 
 ---
 
-## 📅 Suggested Planning
+## 🗓️ Planning indicatif
 
-| Day | Tasks |
-|-----|-------|
-| D1 | ✅ Scraping Phase 1 + Docker Compose |
-| D2 | Scraping Phase 2 + MongoDB Storage |
-| D3 | Web Application (structure + pages) |
-| D4 | Charts + Search |
-| D5 | Elasticsearch (bonus) + Documentation |
-| D6 | Final tests + GitHub Deployment |
+| Jour | Tâches |
+|-----|--------|
+| J1 | Scraping phase 1 + Docker Compose |
+| J2 | Détails + MongoDB |
+| J3 | Web app (structure + pages) |
+| J4 | Graphiques + recherche |
+| J5 | Elasticsearch + documentation |
+| J6 | Tests finaux + publication |

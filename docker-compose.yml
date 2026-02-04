@@ -37,6 +37,8 @@ services:
 
   # Seed Database
   mongo-seed:
+    profiles:
+      - seed
     image: python:3.10-slim
     container_name: scraping_mongo_seed
     depends_on:
@@ -64,15 +66,16 @@ services:
         condition: service_started
       elasticsearch:
         condition: service_started
-      mongo-seed:
-        condition: service_completed_successfully
     environment:
       MONGODB_URI: mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin
       ELASTICSEARCH_URL: http://elasticsearch:9200
     volumes:
       - ./webapp:/app
+      - ./scrapy/data:/data
+      - ./scripts:/scripts
     networks:
       - scraping_network
+    entrypoint: sh -c "pip install pymongo > /dev/null 2>&1 && python /scripts/load_data_on_startup.py || true && streamlit run /app/app.py --server.port=8501 --server.address=0.0.0.0"
 
   # Search Engine
   elasticsearch:

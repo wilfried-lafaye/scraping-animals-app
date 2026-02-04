@@ -1,26 +1,25 @@
 # 🦁 Scraping Animals & Search Engine
 
-A full-stack data engineering project that scrapes animal data from [A-Z Animals](https://a-z-animals.com/), indexes it into **Elasticsearch**, and serves it via a **Streamlit** web application with advanced search capabilities.
+Projet full-stack de data engineering qui **scrape** des fiches d’animaux depuis [A-Z Animals](https://a-z-animals.com/), les **stocke dans MongoDB**, les **indexe dans Elasticsearch**, puis les expose via une **application Streamlit** avec recherche avancée.
 
-## 🚀 Features
+## ✨ Fonctionnalités
 
-- **Robust Scraper**:
-  - Built with **Scrapy**.
-  - **Generic Extraction**: Automatically captures *all* available fields (Physical Characteristics, Fun Facts, etc.) dynamically.
-  - **Resilient**: Uses `scrapy-impersonate` to bypass WAF/403 protections.
-  - **MongoDB Storage**: Directly pipelines scraped data into a MongoDB database.
+- **Scraper robuste (Scrapy)**
+  - Extraction **générique** et dynamique des champs (caractéristiques physiques, fun facts, etc.).
+  - Contourne les protections WAF/403 via `scrapy-impersonate`.
+  - Pipeline direct vers **MongoDB**.
 
-- **Search Engine**:
-  - **Elasticsearch Integration**: Fast, full-text search with typo tolerance ("fuzziness").
-  - **Fallback Mechanism**: Automatically defaults to basic substring search if Elasticsearch is offline.
+- **Moteur de recherche**
+  - **Elasticsearch** pour la recherche plein texte avec tolérance aux fautes (fuzzy).
+  - **Fallback** automatique vers une recherche simple si Elasticsearch est indisponible.
 
-- **Web Application**:
-  - **Streamlit Interface**: Interactive dashboard to explore animal data.
-  - **Filtering**: Filter by Diet, Habitat, Country.
-  - **Geospatial Visualization**: Folium maps showing animal locations.
-  - **Statistics**: Real-time metrics on the dataset.
+- **Web App (Streamlit)**
+  - Exploration interactive des données.
+  - Filtres par **diet**, **habitat** et **country**.
+  - Cartographie **Folium** des localisations.
+  - Statistiques en temps réel.
 
-## 🛠 Architecture
+## 🧭 Architecture
 
 ```mermaid
 graph LR
@@ -31,81 +30,70 @@ graph LR
     User -->|Browser| D
 ```
 
-## 📦 Installation
+## ⚡ Démarrage rapide (Docker)
 
-### Prerequisites
+### Prérequis
 - Docker & Docker Compose
-- Python 3.9+ (for local development)
+- Python 3.9+ (développement local)
 
-### Quick Start (Docker)
+### Lancer la stack
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/wilfried-lafaye/scraping-animals.git
-    cd scraping-animals
-    ```
+1. **Cloner le dépôt**
+   ```bash
+   git clone https://github.com/wilfried-lafaye/scraping-animals-app.git
+   cd scraping-animals-app
+   ```
 
-2.  **Launch Services**:
-    ```bash
-    docker compose up -d --build
-    ```
-    This starts:
-    - MongoDB (Port 27017)
-    - Elasticsearch (Port 9200)
-    - Kibana (Port 5601)
-    - Streamlit App (Port 8501)
+2. **Démarrer les services**
+   ```bash
+   docker compose up -d --build
+   ```
+   Services exposés :
+   - MongoDB (27017)
+   - Elasticsearch (9200)
+   - Kibana (5601)
+   - Streamlit (8501)
 
-3.  **Index Data**:
-    Once services are running, index the data into Elasticsearch:
-    ```bash
-    # From your local machine (requires python env)
-    ./.venv/bin/python3 scripts/index_animals_es.py
-    
-    # OR from within the web container
-    docker compose exec webapp python3 ../scripts/index_animals_es.py
-    ```
+3. **Indexer les données**
+   ```bash
+   # Depuis la machine hôte (si venv configuré)
+   ./.venv/bin/python3 scripts/index_animals_es.py
 
-4.  **Access the App**:
-    Open [http://localhost:8501](http://localhost:8501) in your browser.
+   # OU depuis le conteneur webapp
+   docker compose exec webapp python3 ../scripts/index_animals_es.py
+   ```
 
-## 🕷️ Scraper Usage
+4. **Ouvrir l’application**
+   Accéder à http://localhost:8501
 
-To run the scraper manually (local environment):
+## 🕷️ Utiliser le scraper
+
+Exécution locale (exemple limité à 10 items) :
 
 ```bash
-# Activate virtual environment
 source .venv/bin/activate
-
-# Go to scrapy directory
 cd scrapy
-
-# Run spider (limited to 10 items for testing)
 scrapy crawl animals -s CLOSESPIDER_ITEMCOUNT=10
 ```
 
-## 🧪 Testing
-
-Run quality assurance tests:
+## 🧪 Tests & Qualité
 
 ```bash
-# Run unit tests (Spider logic, JSON validation)
 pytest tests/
-
-# Check code style
 flake8 webapp/ scrapy/
 ```
 
-## 📂 Project Structure
+## 📦 Structure du projet
 
-- `scrapy/`: Scrapy project (Spider, Pipelines, Settings).
-- `webapp/`: Streamlit application code.
-- `scripts/`: Utility scripts (Indexing).
-- `tests/`: Unit and integration tests.
-- `data/`: Local storage for scraped JSON data.
+- `scrapy/` : Spider, pipelines, settings.
+- `webapp/` : application Streamlit.
+- `scripts/` : scripts utilitaires (indexation ES).
+- `tests/` : tests unitaires et intégration.
+- `data/` : stockage local JSON.
 
-## 📝 Roadmap & Status
+## 🗺️ Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) for detailed progress history.
+Consulter [ROADMAP.md](ROADMAP.md) pour l’historique et les prochains jalons.
 
 ---
-*Created by the Data Engineering Team at ESIEE Paris.*
+*Projet développé à ESIEE Paris.*

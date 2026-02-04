@@ -234,13 +234,18 @@ class AnimalsSpider(scrapy.Spider):
 
         # Second try: extract from paragraph tags
         if not description:
-            # Try getting first few paragraphs from main content
-            description_parts = response.xpath('//div[@id="single-animal-text"]//p[position() <= 3]//text()').getall()
+            # Try getting first 2 paragraphs from main content
+            description_parts = response.xpath('//div[@id="single-animal-text"]//p[position() <= 2]//text()').getall()
             if description_parts:
                 description = " ".join([p.strip() for p in description_parts if p.strip() and len(p.strip()) > 20])
-                # Limit to reasonable length
-                if description and len(description) > 500:
-                    description = description[:500] + "..."
+                # Limit to reasonable length, cut at sentence boundary
+                if description and len(description) > 800:
+                    # Try to cut at last sentence before 800 chars
+                    cut_pos = description[:800].rfind('. ')
+                    if cut_pos > 400:  # Only if we find a sentence ending after 400 chars
+                        description = description[:cut_pos + 1]
+                    else:
+                        description = description[:800] + "..."
 
         # Key facts (list items)
         key_facts = response.xpath('//div[contains(@class, "animal-facts")]//li/text()').getall()
