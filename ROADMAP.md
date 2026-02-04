@@ -10,12 +10,13 @@ Construire une application web qui **scrape** les données d’animaux depuis [a
 
 | Étape | Statut | Description |
 |------|--------|-------------|
-| 1. Scraping | ✅ Fait | Liste + détails (≈252 animaux) |
+| 1. Scraping | ✅ Fait | Liste + détails (≈2630 animaux) |
 | 2. Docker Compose | ✅ Fait | Dockerfiles et orchestration | 
 | 3. MongoDB | ✅ Fait | Insertion + validation des données |
-| 4. Web App | ✅ Fait | Streamlit avec filtres, stats, exports |
-| 5. Elasticsearch | ✅ Fait | Indexation + recherche intégrée |
-| 6. Documentation | ✅ Fait | README à jour |
+| 4. Standardisation | ✅ Fait | Nettoyage et normalisation des données |
+| 5. Web App | ✅ Fait | Streamlit avec filtres, stats, exports |
+| 6. Elasticsearch | ✅ Fait | Indexation + recherche intégrée |
+| 7. Documentation | ✅ Fait | README à jour |
 
 ---
 
@@ -53,20 +54,28 @@ Construire une application web qui **scrape** les données d’animaux depuis [a
 - [x] Tests d’intégration sur une vraie instance MongoDB
 - [x] Vérification des données insérées
 
-### 4) Web App (Streamlit) ✅
+### 4) Standardisation des données ✅
+
+- [x] Nettoyage et normalisation des champs (diet, habitat, statut de conservation)
+- [x] Extraction des catégories de régime (Carnivore, Herbivore, Omnivore, etc.)
+- [x] Extraction des catégories d'habitat (Forest, Ocean, Desert, etc.)
+- [x] Gestion des données manquantes et incohérentes
+- [x] Enrichissement via Wikipedia (images, descriptions)
+
+### 5) Web App (Streamlit) ✅
 
 - [x] Filtres (habitat, diet, statut)
 - [x] Table interactive + export CSV
 - [x] Graphiques (distribution)
 - [x] Fiche détaillée par animal
 
-### 5) Elasticsearch ✅
+### 6) Elasticsearch ✅
 
 - [x] Indexation des documents
 - [x] Recherche fuzzy via `SearchClient`
 - [x] Fallback si ES indisponible
 
-### 6) Documentation ✅
+### 7) Documentation ✅
 
 - [x] README mis à jour
 - [ ] Ajouter des instructions de déploiement
