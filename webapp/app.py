@@ -11,7 +11,6 @@ import requests
 from config import MONGODB_URI, DATABASE_NAME, COLLECTION_NAME
 
 
-
 @st.cache_data(ttl=3600)
 def get_wikipedia_image(animal_name: str, scientific_name: str = None) -> str | None:
     """Fetch image URL from Wikipedia API with caching."""

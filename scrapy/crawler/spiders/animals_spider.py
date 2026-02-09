@@ -208,7 +208,7 @@ class AnimalsSpider(scrapy.Spider):
         # Legacy fields extraction (Habitat, Diet) using the new generic data if available
         habitat = all_specs.get('Habitat', all_specs.get('Most Distinctive Feature', None))
         diet = all_specs.get('Diet', all_specs.get('Favorite Food', None))
-        
+
         # Extract fields expected by unit tests / JSON schema
         scientific_name = response.xpath('//em/text()').get()
 
