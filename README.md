@@ -1,5 +1,7 @@
 # 🦁 Scraping Animals & Search Engine
 
+> 🤖 **Note** : Ce projet a été réalisé en *pair programming* avec un assistant IA.
+
 Projet full-stack de data engineering qui **scrape** des fiches d’animaux depuis [A-Z Animals](https://a-z-animals.com/), les **stocke dans MongoDB**, les **indexe dans Elasticsearch**, puis les expose via une **application Streamlit** avec recherche avancée.
 
 ## ✨ Fonctionnalités
