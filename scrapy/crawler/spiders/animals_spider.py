@@ -160,9 +160,9 @@ class AnimalsSpider(scrapy.Spider):
         # 2. Key Facts (The top box with "Fun Fact", "Prey", etc.)
         # Often has class "row" and might be inside a div with specific attributes
         # We look for the "Facts" section specifically to keep them separate from physical traits if possible.
-        facts = extract_dl('//div[contains(@class, "row")]//dl[contains(@class, "row")]') 
+        facts = extract_dl('//div[contains(@class, "row")]//dl[contains(@class, "row")]')
         # Fallback or additional: sometimes they are just in .row class DLs.
-        
+
         # 3. Physical Characteristics (The bottom box with "Color", "Skin Type", etc.)
         # These are often in a section with an H2 "Physical Characteristics".
         physical_characteristics = {}
@@ -179,27 +179,27 @@ class AnimalsSpider(scrapy.Spider):
             # Case 2: Direct sibling (as seen in example.html)
             if not phys_dl:
                 phys_dl = phys_header.xpath('./following-sibling::dl[1]')
-            
+
             if phys_dl:
-                 # Extract standard
-                 for dl in phys_dl:
-                     dt_elements = dl.xpath('.//dt')
-                     dd_elements = dl.xpath('.//dd')
-                     for dt, dd in zip(dt_elements, dd_elements):
-                         label = dt.xpath('string(.)').get()
-                         value = dd.xpath('string(.)').get()
-                         if label and value:
-                             physical_characteristics[label.strip().rstrip(':')] = value.strip()
+                # Extract standard
+                for dl in phys_dl:
+                    dt_elements = dl.xpath('.//dt')
+                    dd_elements = dl.xpath('.//dd')
+                    for dt, dd in zip(dt_elements, dd_elements):
+                        label = dt.xpath('string(.)').get()
+                        value = dd.xpath('string(.)').get()
+                        if label and value:
+                            physical_characteristics[label.strip().rstrip(':')] = value.strip()
 
         # If empty, try a more generic approach to capture ALL DLs and categorize them?
         # For this task, we want to be sure we get everything.
-        # Let's aggregate ALL data into a "general_facts" if we aren't sure, 
+        # Let's aggregate ALL data into a "general_facts" if we aren't sure,
         # but the user asked for "generic", implies getting everything available.
-        
-        # Let's use a robust strategy: Capture ALL dl items into a single 'details' dict for safety, 
+
+        # Let's use a robust strategy: Capture ALL dl items into a single 'details' dict for safety,
         # then also allow specific buckets if we can identify them.
         all_specs = extract_dl('//dl')
-        
+
         # Merge physical chars into all_specs to ensure we have them
         all_specs.update(physical_characteristics)
         all_specs.update(facts)

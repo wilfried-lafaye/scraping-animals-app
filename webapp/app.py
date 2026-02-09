@@ -11,24 +11,25 @@ import requests
 from config import MONGODB_URI, DATABASE_NAME, COLLECTION_NAME
 
 
+
 @st.cache_data(ttl=3600)
 def get_wikipedia_image(animal_name: str, scientific_name: str = None) -> str | None:
     """Fetch image URL from Wikipedia API with caching."""
     base_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
-    
+
     for name in [animal_name, scientific_name]:
         if not name:
             continue
-        
+
         wiki_name = name.strip().replace(" ", "_")
-        
+
         try:
             response = requests.get(
                 f"{base_url}{wiki_name}",
                 headers={"User-Agent": "AnimalScraper/1.0"},
                 timeout=5
             )
-            
+
             if response.ok:
                 data = response.json()
                 if 'originalimage' in data:
@@ -37,7 +38,7 @@ def get_wikipedia_image(animal_name: str, scientific_name: str = None) -> str | 
                     return data['thumbnail'].get('source')
         except Exception:
             continue
-    
+
     return None
 
 
@@ -45,20 +46,20 @@ def get_wikipedia_image(animal_name: str, scientific_name: str = None) -> str | 
 def get_wikipedia_description(animal_name: str, scientific_name: str = None) -> str | None:
     """Fetch description from Wikipedia API with caching."""
     base_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
-    
+
     for name in [scientific_name, animal_name]:
         if not name:
             continue
-        
+
         wiki_name = name.strip().replace(" ", "_")
-        
+
         try:
             response = requests.get(
                 f"{base_url}{wiki_name}",
                 headers={"User-Agent": "AnimalScraper/1.0"},
                 timeout=5
             )
-            
+
             if response.ok:
                 data = response.json()
                 extract = data.get('extract')
@@ -76,14 +77,15 @@ def get_wikipedia_description(animal_name: str, scientific_name: str = None) -> 
                             'high quality pictures'
                         ]):
                             clean_sentences.append(sentence)
-                    
+
                     clean_extract = '. '.join(clean_sentences).strip()
                     if clean_extract and len(clean_extract) > 50:
                         return clean_extract
         except Exception:
             continue
-    
+
     return None
+
 
 # Configuration de la page
 st.set_page_config(
@@ -276,10 +278,10 @@ try:
                 'key_facts': item.get('key_facts', []),
                 'locations': item.get('locations', []),  # Handle missing locations
                 'image_url': item.get('image_url'),
-                'url': item.get('url'), # Fix: Ensure 'url' key exists for UI logic
+                'url': item.get('url'),  # Fix: Ensure 'url' key exists for UI logic
                 'source_url': item.get('url'),
                 'facts': item.get('facts', {}),  # Add facts dict for extraction
-                'classification': item.get('classification', {}), # Add classification object
+                'classification': item.get('classification', {}),  # Add classification object
                 # New standardized fields
                 'top_speed_kph': item.get('top_speed_kph', 0),
                 'weight_min_kg': item.get('weight_min_kg', 0),
@@ -340,13 +342,13 @@ try:
     # Sidebar filters
     with st.sidebar:
         st.header("🔍 Filters")
-        
+
         # --- Diet Dropdown ---
         diet_choices = sorted([c for c in df_animals["Diet Category"].dropna().unique() if c])
         diet_icons = {'Carnivore': '🥩', 'Herbivore': '🌿', 'Omnivore': '🍽️', 'Insectivore': '🦗', 'Piscivore': '🐟'}
         diet_options = [f"{diet_icons.get(diet, '🍴')} {diet}" for diet in diet_choices]
         diet_labels = {opt: diet for opt, diet in zip(diet_options, diet_choices)}
-        
+
         st.markdown("**🍽️ Diet**")
         selected_diet_display = st.multiselect(
             "Diet",
@@ -355,13 +357,13 @@ try:
             label_visibility="collapsed"
         )
         selected_diets = [diet_labels[opt] for opt in selected_diet_display]
-        
+
         # --- Habitat Dropdown ---
         habitat_choices = sorted([c for c in df_animals["Habitat Category"].dropna().unique() if c])
         habitat_icons = {'Forest': '🌲', 'Ocean': '🌊', 'Desert': '🏜️', 'Grassland': '🌾', 'Wetland': '🌿', 'Mountain': '🏔️', 'Tundra': '❄️', 'Urban': '🏙️'}
         habitat_options = [f"{habitat_icons.get(habitat, '🌍')} {habitat}" for habitat in habitat_choices]
         habitat_labels = {opt: habitat for opt, habitat in zip(habitat_options, habitat_choices)}
-        
+
         st.markdown("**🏠 Habitat**")
         selected_habitat_display = st.multiselect(
             "Habitat",
@@ -370,30 +372,32 @@ try:
             label_visibility="collapsed"
         )
         selected_habitats = [habitat_labels[opt] for opt in selected_habitat_display]
-        
+
         st.divider()
         st.subheader("Advanced Filters")
-        
+
         # Helper to safely get min/max for sliders
         def safe_min_max(column):
-            if df_animals.empty: return 0.0, 100.0
+            if df_animals.empty:
+                return 0.0, 100.0
             val_min = float(df_animals[column].min())
             val_max = float(df_animals[column].max())
-            if val_min == val_max: val_max += 1
+            if val_min == val_max:
+                val_max += 1
             return val_min, val_max
 
         # Weight Slider
         w_min, w_max = safe_min_max('weight_min_kg')
-        weight_range = st.slider("Min Weight (kg)", 
-                                min_value=0.0, max_value=w_max, 
-                                value=(0.0, w_max), step=0.1)
-                                
+        weight_range = st.slider("Min Weight (kg)",
+                                 min_value=0.0, max_value=w_max,
+                                 value=(0.0, w_max), step=0.1)
+
         # Speed Slider
         s_min, s_max = safe_min_max('top_speed_kph')
-        speed_range = st.slider("Top Speed (km/h)", 
-                                min_value=0.0, max_value=s_max, 
+        speed_range = st.slider("Top Speed (km/h)",
+                                min_value=0.0, max_value=s_max,
                                 value=(0.0, s_max), step=1.0)
-                                
+
         # Sort options
         st.divider()
         sort_option = st.selectbox("Sort By", options=["Name (A-Z)", "Speed (Fastest)", "Weight (Heaviest)", "Lifespan (Longest)"])
@@ -422,15 +426,15 @@ try:
             filtered_df = filtered_df[filtered_df["Diet Category"].isin(selected_diets)]
         if selected_habitats:
             filtered_df = filtered_df[filtered_df["Habitat Category"].isin(selected_habitats)]
-        
+
         # Apply Advanced Filters
         filtered_df = filtered_df[
-            (filtered_df['weight_min_kg'] >= weight_range[0]) & 
-            (filtered_df['weight_min_kg'] <= weight_range[1])
+            (filtered_df['weight_min_kg'] >= weight_range[0])
+            & (filtered_df['weight_min_kg'] <= weight_range[1])
         ]
         filtered_df = filtered_df[
-            (filtered_df['top_speed_kph'] >= speed_range[0]) & 
-            (filtered_df['top_speed_kph'] <= speed_range[1])
+            (filtered_df['top_speed_kph'] >= speed_range[0])
+            & (filtered_df['top_speed_kph'] <= speed_range[1])
         ]
 
     animals_count = len(filtered_df)
@@ -550,14 +554,14 @@ try:
         st.markdown("### Insights")
         if not filtered_df.empty:
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 diet_counts = filtered_df["Diet Category"].value_counts().reset_index()
                 diet_counts.columns = ["Diet", "Count"]
                 fig1 = px.bar(diet_counts, x="Diet", y="Count", title="Diet Distribution", text="Count")
                 fig1.update_traces(textposition='outside')
                 st.plotly_chart(fig1, use_container_width=True)
-            
+
             with col2:
                 conservation_counts = filtered_df[filtered_df["conservation_status"] != "Unknown"]["conservation_status"].value_counts().reset_index()
                 conservation_counts.columns = ["Status", "Count"]
@@ -584,18 +588,18 @@ try:
             # HERO HEADER (Always visible)
             # =============================================
             hero_col1, hero_col2 = st.columns([1, 3])
-            
+
             with hero_col1:
                 # Try existing image, then Wikipedia fallback
                 image_url = animal.get('image_url')
-                
+
                 if not image_url or not image_url.startswith('http'):
                     # Try Wikipedia fallback
                     image_url = get_wikipedia_image(
-                        animal['animal_name'], 
+                        animal['animal_name'],
                         animal.get('scientific_name')
                     )
-                
+
                 if image_url:
                     try:
                         st.image(image_url, use_container_width=True)
@@ -603,21 +607,21 @@ try:
                         st.info("🦁 Image unavailable")
                 else:
                     st.info("🦁 No image")
-            
+
             with hero_col2:
                 st.title(animal['animal_name'])
                 st.caption(f"*{animal.get('scientific_name') or 'Scientific name unknown'}*")
-                
+
                 # Status badges in a row
                 badge_cols = st.columns(4)
-                
+
                 # Diet badge with correct icon
                 with badge_cols[0]:
                     diet_cat = animal.get('Diet Category', 'Unknown')
                     diet_icons = {'Carnivore': '🥩', 'Herbivore': '🌿', 'Omnivore': '🍽️', 'Insectivore': '🦗', 'Piscivore': '🐟'}
                     diet_icon = diet_icons.get(diet_cat, '🍴')
                     st.success(f"{diet_icon} {diet_cat}")
-                
+
                 with badge_cols[1]:
                     st.info(f"🌍 {animal.get('Habitat Category', 'Unknown')}")
                 with badge_cols[2]:
@@ -628,31 +632,31 @@ try:
                         st.warning(f"⚠️ {status}")
                     else:
                         st.info(f"ℹ️ {status}")
-            
+
             # =============================================
             # QUICK STATS (Always visible under hero)
             # =============================================
             with st.container(border=True):
                 stat_cols = st.columns(4)
-                
+
                 with stat_cols[0]:
                     speed = animal.get('top_speed_kph', 0)
                     st.metric("⚡ Top Speed", f"{speed} km/h" if speed else "N/A")
-                
+
                 with stat_cols[1]:
                     weight = animal.get('weight_min_kg', 0)
                     label = "⚖️ Weight"
                     if animal.get('weight_source') == 'wikidata':
                         label += " (✨)"
                     st.metric(label, f"{weight} kg" if weight else "N/A")
-                
+
                 with stat_cols[2]:
                     lifespan = animal.get('lifespan_min_years', 0)
                     label = "🕐 Lifespan"
                     if animal.get('lifespan_source') == 'wikidata':
                         label += " (✨)"
                     st.metric(label, f"{lifespan} yrs" if lifespan else "N/A")
-                
+
                 with stat_cols[3]:
                     litter = None
                     if isinstance(animal.get('facts'), dict):
@@ -663,43 +667,43 @@ try:
             # TABS NAVIGATION
             # =============================================
             tab1, tab2, tab3 = st.tabs(["📋 Overview", "📊 All Facts", "🧬 Classification"])
-            
+
             # ------------------------------------------
             # TAB 1: OVERVIEW (2-column layout)
             # ------------------------------------------
             with tab1:
                 # Row 1: Fun Fact + Habitat side by side
                 overview_col1, overview_col2 = st.columns(2)
-                
+
                 with overview_col1:
                     # Fun Fact Card
                     fun_fact = None
                     if isinstance(animal.get('facts'), dict):
                         fun_fact = animal['facts'].get('Fun Fact')
-                    
+
                     with st.container(border=True):
                         st.markdown("**💡 Fun Fact**")
                         if fun_fact:
                             st.write(fun_fact)
                         else:
                             st.caption("No fun fact available.")
-                
+
                 with overview_col2:
                     # Habitat Card
                     with st.container(border=True):
                         st.markdown("**🌍 Habitat**")
-                        
+
                         habitat_info = 'Unknown'
                         if isinstance(animal.get('facts'), dict) and animal['facts'].get('Habitat'):
                             habitat_info = animal['facts']['Habitat']
                         elif animal.get('habitat'):
                             habitat_info = animal['habitat']
-                        
+
                         st.write(habitat_info)
-                
+
                 # Row 2: Location + Conservation
                 loc_col1, loc_col2 = st.columns(2)
-                
+
                 with loc_col1:
                     with st.container(border=True):
                         st.markdown("**📍 Found In**")
@@ -708,15 +712,15 @@ try:
                             st.write(", ".join(set(locations)))
                         else:
                             st.caption("Unknown")
-                
+
                 with loc_col2:
                     with st.container(border=True):
                         st.markdown("**🛡️ Conservation**")
                         st.write(animal.get('conservation_status', 'Unknown'))
-                
+
                 # Row 3: Description (full width) - with Wikipedia fallback
                 description = animal.get('description')
-                
+
                 # Clean up meta descriptions from scraped data
                 if description:
                     bad_phrases = [
@@ -728,14 +732,14 @@ try:
                     # If description contains these phrases, skip it
                     if any(phrase in str(description) for phrase in bad_phrases):
                         description = None
-                
+
                 # Try Wikipedia if no description or too short
                 if not description or len(str(description)) < 50:
                     description = get_wikipedia_description(
                         animal['animal_name'],
                         animal.get('scientific_name')
                     )
-                
+
                 if description:
                     with st.container(border=True):
                         desc_header = "**📖 Description**"
@@ -743,26 +747,26 @@ try:
                             desc_header += " *(✨ Wikipedia)*"
                         st.markdown(desc_header)
                         st.write(description)
-            
+
             # ------------------------------------------
             # TAB 2: ALL FACTS
             # ------------------------------------------
             with tab2:
                 with st.container(border=True):
                     st.markdown("**📋 Complete Profile**")
-                    
+
                     all_facts = {}
                     if isinstance(animal.get('facts'), dict):
                         all_facts.update(animal['facts'])
                     if isinstance(animal.get('physical_characteristics'), dict):
                         all_facts.update(animal['physical_characteristics'])
-                    
+
                     excluded_keys = {
                         'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Scientific Name',
-                        'Fun Fact', 'Description', 'Diet', 'Diet Category', 'Habitat', 
+                        'Fun Fact', 'Description', 'Diet', 'Diet Category', 'Habitat',
                         'Top Speed', 'Weight', 'Lifespan', 'Litter Size', 'Average Litter Size'
                     }
-                    
+
                     valid_facts = {}
                     for k, v in all_facts.items():
                         if k in excluded_keys or k.title() in excluded_keys:
@@ -786,20 +790,20 @@ try:
                                         st.write(valid_facts[key])
                     else:
                         st.caption("No additional facts available.")
-            
+
             # ------------------------------------------
             # TAB 3: CLASSIFICATION
             # ------------------------------------------
             with tab3:
                 classification = animal.get('classification', {})
-                
+
                 if classification:
                     with st.container(border=True):
                         st.markdown("**🧬 Taxonomy**")
-                        
+
                         tax_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
                         tax_cols = st.columns(len(tax_levels))
-                        
+
                         for i, level in enumerate(tax_levels):
                             val = classification.get(level, 'N/A')
                             with tax_cols[i]:
@@ -807,12 +811,11 @@ try:
                                 st.write(val if val else "N/A")
                 else:
                     st.info("No classification data available.")
-                
-                # Source Card - A-Z Animals Link
-            # Source Card - A-Z Animals Link & Others
+
+                # Source Card - A-Z Animals Link & Others
                 with st.container(border=True):
                     st.markdown("**📄 Data Sources**")
-                    
+
                     # Original Source
                     az_url = animal.get('url')
                     if az_url:
