@@ -55,11 +55,15 @@ graph LR
    - Streamlit (8501)
 
 3. **Indexer les données**
-   ```bash
-   # Depuis la machine hôte (si venv configuré)
-   ./.venv/bin/python3 scripts/index_animals_es.py
+   Les données sont automatiquement chargées dans MongoDB au démarrage de la Web App.
+   Pour indexer dans Elasticsearch (recherche texte) :
 
-   # OU depuis le conteneur webapp
+   ```bash
+   # Via le script de gestion (recommandé)
+   ./start.py
+   # Choisir option 4: Reload Database
+
+   # OU manuellement via docker
    docker compose exec webapp python3 ../scripts/index_animals_es.py
    ```
 
@@ -71,7 +75,8 @@ graph LR
 Exécution locale (exemple limité à 10 items) :
 
 ```bash
-source .venv/bin/activate
+```bash
+source venv/bin/activate
 cd scrapy
 scrapy crawl animals -s CLOSESPIDER_ITEMCOUNT=10
 ```

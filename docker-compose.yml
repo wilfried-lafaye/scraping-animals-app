@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database - MongoDB
   mongodb:
@@ -32,24 +30,6 @@ services:
     volumes:
       - ./scrapy/crawler:/app/crawler
       - ./scrapy/data:/app/data
-    networks:
-      - scraping_network
-
-  # Seed Database
-  mongo-seed:
-    profiles:
-      - seed
-    image: python:3.10-slim
-    container_name: scraping_mongo_seed
-    depends_on:
-      - mongodb
-    volumes:
-      - ./scrapy/data/animals.json:/app/animals.json
-      - ./scripts/import_script.py:/app/import_script.py
-    working_dir: /app
-    environment:
-      MONGODB_URI: "mongodb://scraper:scraper_password@mongodb:27017/animals_db?authSource=admin"
-    command: sh -c "pip install pymongo && python import_script.py"
     networks:
       - scraping_network
 

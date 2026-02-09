@@ -78,7 +78,7 @@ Construire une application web qui **scrape** les données d’animaux depuis [a
 ### 7) Documentation ✅
 
 - [x] README mis à jour
-- [ ] Ajouter des instructions de déploiement
+- [x] Ajouter des instructions de déploiement
 
 ## ✅ Checklist des exigences
 
@@ -90,11 +90,11 @@ Construire une application web qui **scrape** les données d’animaux depuis [a
 - [x] Visualisations et recherche
 - [x] Services conteneurisés
 - [x] Documentation technique/func
-- [ ] Dépôt GitHub public
+- [x] Dépôt GitHub public
 
 ### Bonus
 
-- [ ] Scraping au démarrage
+- [x] Scraping au démarrage (via menu interactif)
 - [x] docker-compose
 - [x] Recherche Elasticsearch
 
@@ -104,15 +104,4 @@ Construire une application web qui **scrape** les données d’animaux depuis [a
 
 - **Partenaire** : Keren BENADIBA & Wilfried LAFAYE
 
----
 
-## 🗓️ Planning indicatif
-
-| Jour | Tâches |
-|-----|--------|
-| J1 | Scraping phase 1 + Docker Compose |
-| J2 | Détails + MongoDB |
-| J3 | Web app (structure + pages) |
-| J4 | Graphiques + recherche |
-| J5 | Elasticsearch + documentation |
-| J6 | Tests finaux + publication |
